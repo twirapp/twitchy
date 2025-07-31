@@ -1,5 +1,5 @@
 <div align="center">
-    <h1>Chato</h1>
+    <h1>Twitchy</h1>
 	<h3>A complete Twitch library for Go</h3>
 </div>
 
