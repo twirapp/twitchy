@@ -1,0 +1,99 @@
+# Reference: https://golangci-lint.run/usage/configuration/#config-file
+#
+# To set up in your editor see https://golangci-lint.run/welcome/integrations
+
+linters:
+  disable-all: true
+  enable:
+    - asciicheck
+    - bodyclose
+    - copyloopvar
+    - dogsled
+    - errcheck
+    - exhaustive
+    - funlen
+    - gochecknoinits
+    - gocritic
+    - gocyclo
+    - godot
+    - gofmt
+    - gofumpt
+    - goimports
+    - goprintffuncname
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - revive
+    - rowserrcheck
+    - staticcheck
+    - stylecheck
+    - thelper
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+linters-settings:
+  funlen:
+    lines: 100
+    statements: 50
+  goimports:
+    local-prefixes: github.com/golangci/golangci-lint
+  govet:
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+    enable:
+      - nilness
+      - shadow
+  errorlint:
+    asserts: false
+  lll:
+    line-length: 120
+  misspell:
+    locale: US
+  nolintlint:
+    allow-unused: false
+    require-explanation: false
+    require-specific: false
+  revive:
+    severity: warning
+    confidence: 0.8
+    rules:
+      - name: cyclomatic
+        arguments:
+          - 30
+      - name: cognitive-complexity
+        arguments:
+          - 30
+      - name: function-result-limit
+        arguments:
+          - 3
+      - name: unhandled-error
+        arguments:
+          - 'fmt.*'
+          - 'bytes.Buffer.*'
+          - 'strings.Builder.*'
+issues:
+  exclude-rules:
+    - text: "shadow: declaration of \"err\" shadows declaration at"
+      linters:
+        - govet
+    - path: _test\.go
+      linters:
+        - funlen
+    - path: _test\.go
+      linters:
+        - staticcheck
+      text: "SA1029"
