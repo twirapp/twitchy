@@ -6,20 +6,22 @@ import (
 	"fmt"
 )
 
-type websocketRawMessage struct {
-	Metadata struct {
-		MessageId           string       `json:"message_id"`
-		MessageType         string       `json:"message_type"`
-		MessageTimestamp    TimestampUTC `json:"message_timestamp"`
-		SubscriptionType    string       `json:"subscription_type"`
-		SubscriptionVersion string       `json:"subscription_version"`
-	} `json:"metadata"`
-	Payload json.RawMessage `json:"payload"`
-}
+type (
+	websocketRawMessage struct {
+		Metadata struct {
+			MessageId           string       `json:"message_id"`
+			MessageType         string       `json:"message_type"`
+			MessageTimestamp    TimestampUTC `json:"message_timestamp"`
+			SubscriptionType    string       `json:"subscription_type"`
+			SubscriptionVersion string       `json:"subscription_version"`
+		} `json:"metadata"`
+		Payload json.RawMessage `json:"payload"`
+	}
 
-type websocketMessageNotification struct {
-	Event json.RawMessage `json:"event,omitempty"`
-}
+	websocketRawMessagePayload struct {
+		Event json.RawMessage `json:"event,omitempty"`
+	}
+)
 
 func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMessage) error {
 	metadata := message.Metadata
@@ -114,7 +116,7 @@ func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMess
 			SubscriptionVersion: metadata.SubscriptionVersion,
 		}
 
-		var payload websocketMessageNotification
+		var payload websocketRawMessagePayload
 
 		if err := json.Unmarshal(message.Payload, &payload); err != nil {
 			return fmt.Errorf("unmsrshal payload: %w", err)

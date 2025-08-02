@@ -90,7 +90,13 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	if !ws.setActive() {
 		return nil
 	}
-	defer ws.setInactivate()
+	defer func() {
+		ws.setInactivate()
+
+		select {
+		case ws.stop <- struct{}{}:
+		}
+	}()
 
 	if err := ws.connect(ctx, ws.serverURL); err != nil {
 		return err
@@ -101,8 +107,10 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 
 	go ws.keepalive(connCtx)
 	go func() {
-		<-ws.stop
-		cancel()
+		select {
+		case <-ws.stop:
+			cancel()
+		}
 	}()
 
 	for {
@@ -273,5 +281,6 @@ func (ws *Websocket) setKeepalive(timestamp TimestampUTC) {
 
 // getKeepalive loads last keepalive timestamp atomically and returns its value.
 func (ws *Websocket) getKeepalive() time.Time {
-	return ws.lastKeepalive.Load().(time.Time)
+	lastKeepalive := ws.lastKeepalive.Load().(TimestampUTC)
+	return lastKeepalive.Time
 }
