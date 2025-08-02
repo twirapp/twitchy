@@ -15,7 +15,10 @@ type websocketRawMessage struct {
 		SubscriptionVersion string       `json:"subscription_version"`
 	} `json:"metadata"`
 	Payload json.RawMessage `json:"payload"`
-	Event   json.RawMessage `json:"event,omitempty"`
+}
+
+type websocketMessageNotification struct {
+	Event json.RawMessage `json:"event,omitempty"`
 }
 
 func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMessage) error {
@@ -111,7 +114,13 @@ func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMess
 			SubscriptionVersion: metadata.SubscriptionVersion,
 		}
 
-		return ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, message.Event, nm)
+		var payload websocketMessageNotification
+
+		if err := json.Unmarshal(message.Payload, &payload); err != nil {
+			return fmt.Errorf("unmsrshal payload: %w", err)
+		}
+
+		return ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, payload.Event, nm)
 	case "revocation":
 		// TODO: implement me
 	}
