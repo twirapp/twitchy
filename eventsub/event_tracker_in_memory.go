@@ -23,5 +23,5 @@ func NewInMemoryEventTracker(eventTrackingTTL time.Duration) *InMemoryEventTrack
 
 func (iet *InMemoryEventTracker) Track(_ context.Context, eventID string) (bool, error) {
 	_, isAbsent := iet.events.GetOrSet(eventID, struct{}{})
-	return !isAbsent, nil
+	return isAbsent, nil
 }
