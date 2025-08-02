@@ -7,12 +7,8 @@ type (
 	onWebsocketReconnect      = func(WebsocketReconnectMessage)
 	onWebsocketReconnectError = func(error)
 	onWebsocketDuplicate      = func(MessageID)
+	onWebsocketDisconnect     = func()
 )
-
-// OnDuplicate invokes when duplicate message is caught.
-func (ws *Websocket) OnDuplicate(onDuplicate onWebsocketDuplicate) {
-	ws.onDuplicate = onDuplicate
-}
 
 // OnWelcome invokes when eventsub sends welcome message to let you subscribe to events.
 //
@@ -46,4 +42,14 @@ func (ws *Websocket) OnReconnect(onReconnect onWebsocketReconnect) {
 // OnReconnectError invokes when reconnection failed and error is returned.
 func (ws *Websocket) OnReconnectError(onReconnectError onWebsocketReconnectError) {
 	ws.onReconnectError = onReconnectError
+}
+
+// OnDuplicate invokes when duplicate message is caught.
+func (ws *Websocket) OnDuplicate(onDuplicate onWebsocketDuplicate) {
+	ws.onDuplicate = onDuplicate
+}
+
+// OnDisconnect invokes when client instance is being disconnected from eventsub server.
+func (ws *Websocket) OnDisconnect(onWebsocketDisconnect onWebsocketDisconnect) {
+	ws.onDisconnect = onWebsocketDisconnect
 }
