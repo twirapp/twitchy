@@ -1,6 +1,5 @@
 <div align="center">
     <h1>Twitchy</h1>
-	<h3>A complete Twitch library for Go</h3>
 </div>
 
 <p align="center">
