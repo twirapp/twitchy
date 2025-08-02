@@ -8,11 +8,6 @@ type WebsocketSession struct {
 	ConnectedAt             TimestampUTC `json:"connected_at"`
 }
 
-type WebsocketTransport struct {
-	Method    string `json:"method"`
-	SessionId string `json:"session_id"`
-}
-
 type WebsocketMessage[Metadata, Payload any] struct {
 	Metadata Metadata `json:"metadata"`
 	Payload  Payload  `json:"payload"`

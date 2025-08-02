@@ -1,11 +1,11 @@
 package eventsub
 
-type ConditionMarker interface {
+type Condition interface {
 	isCondition()
 }
 
 type AutomodMessageHoldCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel).
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -13,7 +13,7 @@ type AutomodMessageHoldCondition struct {
 }
 
 type AutomodMessageUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel), maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -21,7 +21,7 @@ type AutomodMessageUpdateCondition struct {
 }
 
 type AutomodSettingsUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel), maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -29,7 +29,7 @@ type AutomodSettingsUpdateCondition struct {
 }
 
 type AutomodTermsUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel), maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -37,25 +37,25 @@ type AutomodTermsUpdateCondition struct {
 }
 
 type ChannelAdBreakBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterId is an id of the broadcaster that you want to get channel ad break begin notifications for, maximum 1.
 	BroadcasterId string `json:"broadcaster_user_id"`
 }
 
 type ChannelBanCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get ban notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelBitsUseCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel broadcaster, maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelChatClearCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat clear events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -63,7 +63,7 @@ type ChannelChatClearCondition struct {
 }
 
 type ChannelChatClearUserMessagesCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat clear user messages events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -71,7 +71,7 @@ type ChannelChatClearUserMessagesCondition struct {
 }
 
 type ChannelChatMessageCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat message events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -79,7 +79,7 @@ type ChannelChatMessageCondition struct {
 }
 
 type ChannelChatMessageDeleteCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat message delete events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -87,7 +87,7 @@ type ChannelChatMessageDeleteCondition struct {
 }
 
 type ChannelChatNotificationCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat notification events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -95,7 +95,7 @@ type ChannelChatNotificationCondition struct {
 }
 
 type ChannelChatSettingsUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat settings update events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -103,7 +103,7 @@ type ChannelChatSettingsUpdateCondition struct {
 }
 
 type ChannelChatUserMessageHoldCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat message events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -111,7 +111,7 @@ type ChannelChatUserMessageHoldCondition struct {
 }
 
 type ChannelChatUserMessageUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive chat message events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// UserId is a user ID to read chat as.
@@ -119,43 +119,43 @@ type ChannelChatUserMessageUpdateCondition struct {
 }
 
 type ChannelSubscribeCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get subscribe notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSubscriptionEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get subscription end notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSubscriptionGiftCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get subscription gift notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSubscriptionMessageCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get resubscription chat message notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelCheerCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get cheer notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get updates for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelFollowCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get follow notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is an ID of the moderator of the channel you want to get follow notifications for.
@@ -164,13 +164,13 @@ type ChannelFollowCondition struct {
 }
 
 type ChannelUnbanCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get unban notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelUnbanRequestCreateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster you want to get chat unban request notifications for, maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is an ID of the user that has permission to moderate the broadcaster’s channel and has granted
@@ -179,7 +179,7 @@ type ChannelUnbanRequestCreateCondition struct {
 }
 
 type ChannelUnbanRequestResolveCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster you want to get unban request resolution notifications for, maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is an ID of the user that has permission to moderate the broadcaster’s channel and has granted
@@ -188,7 +188,7 @@ type ChannelUnbanRequestResolveCondition struct {
 }
 
 type ChannelRaidCondition struct {
-	ConditionMarker
+	Condition
 	// FromBroadcasterUserId is a broadcaster user ID that created the channel raid you want to get notifications for.
 	// Use this parameter if you want to know when a specific broadcaster raids another broadcaster. The channel raid
 	// condition must include either from_broadcaster_user_id or to_broadcaster_user_id.
@@ -200,7 +200,7 @@ type ChannelRaidCondition struct {
 }
 
 type ChannelModerateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -208,7 +208,7 @@ type ChannelModerateCondition struct {
 }
 
 type ChannelModerateV2Condition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -216,19 +216,19 @@ type ChannelModerateV2Condition struct {
 }
 
 type ChannelModeratorAddCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get moderator addition notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelModeratorRemoveCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to get moderator removal notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelGuestStarSessionBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel hosting the guest star session.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator or broadcaster of the specified channel.
@@ -236,7 +236,7 @@ type ChannelGuestStarSessionBeginCondition struct {
 }
 
 type ChannelGuestStarSessionEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel hosting the guest star session.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator or broadcaster of the specified channel.
@@ -244,7 +244,7 @@ type ChannelGuestStarSessionEndCondition struct {
 }
 
 type ChannelGuestStarGuestUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel hosting the guest star session.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator or broadcaster of the specified channel.
@@ -252,7 +252,7 @@ type ChannelGuestStarGuestUpdateCondition struct {
 }
 
 type ChannelGuestStarSettingsUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel hosting the guest star session.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator or broadcaster of the specified channel.
@@ -260,25 +260,25 @@ type ChannelGuestStarSettingsUpdateCondition struct {
 }
 
 type ChannelPointsAutomaticRewardRedemptionAddCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points reward add notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPointsAutomaticRewardRedemptionAddV2Condition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points reward add notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPointsCustomRewardAddCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points custom reward add notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPointsCustomRewardUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points custom reward update notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// RewardId is a reward id to only receive notifications for a specific reward, optional.
@@ -286,7 +286,7 @@ type ChannelPointsCustomRewardUpdateCondition struct {
 }
 
 type ChannelPointsCustomRewardRemoveCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points custom reward remove notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// RewardId is a reward id to only receive notifications for a specific reward, optional.
@@ -294,7 +294,7 @@ type ChannelPointsCustomRewardRemoveCondition struct {
 }
 
 type ChannelPointsCustomRewardRedemptionAddCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points custom reward redemption add notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// RewardId is a reward id to only receive notifications for a specific reward, optional.
@@ -302,7 +302,7 @@ type ChannelPointsCustomRewardRedemptionAddCondition struct {
 }
 
 type ChannelPointsCustomRewardRedemptionUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID for the channel you want to receive channel points custom reward redemption update notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// RewardId is a reward id to only receive notifications for a specific reward, optional.
@@ -310,67 +310,67 @@ type ChannelPointsCustomRewardRedemptionUpdateCondition struct {
 }
 
 type ChannelPollBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “poll begin” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPollProgressCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “poll progress” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPollEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “poll end” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPredictionBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “prediction begin” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPredictionProgressCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “prediction progress” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPredictionLockCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “prediction lock” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelPredictionEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID of the channel for which “prediction end” notifications will be received.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSharedChatSessionBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive shared chat session begin events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSharedChatSessionUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive shared chat session update events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSharedChatSessionEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the channel to receive shared chat session end events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelSuspiciousUserMessageCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the channel to receive chat message events for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is an ID of a user that has permission to moderate the broadcaster’s channel and has granted your
@@ -379,7 +379,7 @@ type ChannelSuspiciousUserMessageCondition struct {
 }
 
 type ChannelSuspiciousUserUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster you want to get chat unban request notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is an ID of a user that has permission to moderate the broadcaster’s channel and has granted your
@@ -388,19 +388,19 @@ type ChannelSuspiciousUserUpdateCondition struct {
 }
 
 type ChannelVIPAddCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel), maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelVIPRemoveCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster (channel), maximum 1.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type ChannelWarningAcknowledgeCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -408,7 +408,7 @@ type ChannelWarningAcknowledgeCondition struct {
 }
 
 type ChannelWarningSendCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a user ID of the broadcaster.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a user ID of the moderator.
@@ -416,7 +416,7 @@ type ChannelWarningSendCondition struct {
 }
 
 type ConduitShardDisabledCondition struct {
-	ConditionMarker
+	Condition
 	// ClientId is your application’s client id. The provided client_id must match the client ID in the application access token.
 	ClientId string `json:"broadcaster_user_id"`
 	// ModeratorUserId is a conduit ID to receive events for. If omitted, events for all of this client’s conduits are sent.
@@ -424,7 +424,7 @@ type ConduitShardDisabledCondition struct {
 }
 
 type DropEntitlementGrantCondition struct {
-	ConditionMarker
+	Condition
 	// OrganizationId is an organization ID of the organization that owns the game on the developer portal.
 	OrganizationId string `json:"organization_id"`
 	// CategoryId is a category (or game) ID of the game for which entitlement notifications will be received.
@@ -434,67 +434,67 @@ type DropEntitlementGrantCondition struct {
 }
 
 type ExtensionBitsTransactionCreateCondition struct {
-	ConditionMarker
+	Condition
 	// ExtensionClientId is a client ID of the extension.
 	ExtensionClientId string `json:"extension_client_id"`
 }
 
 type GoalsCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster to get notified about. The ID must match the user_id in the OAuth access token.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type HypeTrainBeginCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster that you want to get hype train begin notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type HypeTrainProgressCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster that you want to get hype train progress notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type HypeTrainEndCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is an ID of the broadcaster that you want to get hype train end notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type StreamOnlineCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID you want to get stream online notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type StreamOfflineCondition struct {
-	ConditionMarker
+	Condition
 	// BroadcasterUserId is a broadcaster user ID you want to get stream offline notifications for.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 
 type UserAuthorizationGrantCondition struct {
-	ConditionMarker
+	Condition
 	// ClientId is your application’s client id. The provided client_id must match the client id in the application access token.
 	ClientId string `json:"client_id"`
 }
 
 type UserAuthorizationRevokeCondition struct {
-	ConditionMarker
+	Condition
 	// ClientId is your application’s client id. The provided client_id must match the client id in the application access token.
 	ClientId string `json:"client_id"`
 }
 
 type UserUpdateCondition struct {
-	ConditionMarker
+	Condition
 	// UserId is a user ID for the user you want update notifications for.
 	UserId string `json:"user_id"`
 }
 
 type WhisperReceivedCondition struct {
-	ConditionMarker
+	Condition
 	// UserId is a user_id of the person receiving whispers
 	UserId string `json:"user_id"`
 }

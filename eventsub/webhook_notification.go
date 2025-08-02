@@ -1,10 +1,5 @@
 package eventsub
 
-type WebhookTransport struct {
-	Method   string `json:"method"`
-	Callback string `json:"callback"`
-}
-
 type WebhookNotificationMetadata struct {
 	MessageID           string
 	MessageRetry        int
