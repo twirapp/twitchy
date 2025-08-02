@@ -136,7 +136,7 @@ func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header,
 		SubscriptionVersion: subscriptionVersion,
 	}
 
-	if err = wh.callback.runEventCallback(subscriptionType, subscriptionVersion, body, metadata); err != nil {
+	if err = wh.callback.runEventCallback(EventType(messageType), subscriptionVersion, body, metadata); err != nil {
 		var status int
 
 		if errors.Is(err, ErrUndefinedEventType) {

@@ -8,41 +8,41 @@ import (
 
 var ErrUndefinedEventType = errors.New("undefined event type")
 
-func (c *callback[Metadata]) runEventCallback(eventType, eventVersion string, body []byte, metadata Metadata) error {
+func (c *callback[Metadata]) runEventCallback(eventType EventType, eventVersion string, body []byte, metadata Metadata) error {
 	switch eventType {
-	case "automod.message.hold":
+	case EventTypeAutomodMessageHold:
 		switch eventVersion {
 		case "1":
 			return runCallbackHandler(c.onAutomodMessageHold, body, metadata)
 		case "2":
 			return runCallbackHandler(c.onAutomodMessageHoldV2, body, metadata)
 		}
-	case "automod.message.update":
+	case EventTypeAutomodMessageUpdate:
 		switch eventVersion {
 		case "1":
 			return runCallbackHandler(c.onAutomodMessageUpdate, body, metadata)
 		case "2":
 			return runCallbackHandler(c.onAutomodMessageUpdateV2, body, metadata)
 		}
-	case "automod.settings.update":
+	case EventTypeAutomodSettingsUpdate:
 		return runCallbackHandler(c.onAutomodSettingsUpdate, body, metadata)
-	case "automod.terms.update":
+	case EventTypeAutomodTermsUpdate:
 		return runCallbackHandler(c.onAutomodTermsUpdate, body, metadata)
-	case "channel.bits.use":
+	case EventTypeChannelBitsUse:
 		return runCallbackHandler(c.onChannelBitsUse, body, metadata)
-	case "channel.update":
+	case EventTypeChannelUpdate:
 		return runCallbackHandler(c.onChannelUpdate, body, metadata)
-	case "channel.follow":
+	case EventTypeChannelFollow:
 		return runCallbackHandler(c.onChannelFollow, body, metadata)
-	case "channel.ad_break.begin":
+	case EventTypeChannelAdBreakBegin:
 		return runCallbackHandler(c.onChannelAdBreakBegin, body, metadata)
-	case "channel.chat.clear":
+	case EventTypeChannelChatClear:
 		return runCallbackHandler(c.onChannelChatClear, body, metadata)
-	case "channel.chat.clear_user_messages":
+	case EventTypeChannelChatClearUserMessages:
 		return runCallbackHandler(c.onChannelChatClearUserMessages, body, metadata)
-	case "channel.chat.message":
+	case EventTypeChannelChatMessage:
 		return runCallbackHandler(c.onChannelChatMessage, body, metadata)
-	case "conduit.shard.disabled":
+	case EventTypeConduitShardDisabled:
 		return runCallbackHandler(c.onConduitShardDisabled, body, metadata)
 	default:
 		return ErrUndefinedEventType

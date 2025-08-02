@@ -122,7 +122,7 @@ func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMess
 			return fmt.Errorf("unmsrshal payload: %w", err)
 		}
 
-		return ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, payload.Event, nm)
+		return ws.callback.runEventCallback(EventType(metadata.SubscriptionType), metadata.SubscriptionVersion, payload.Event, nm)
 	case "revocation":
 		// TODO: implement me
 	}
