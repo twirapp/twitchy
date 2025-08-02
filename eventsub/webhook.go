@@ -118,25 +118,19 @@ func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header,
 		return
 	}
 
-	var (
-		messageId           = header.Get("Twitch-Eventsub-Message-Id")
-		messageType         = header.Get("Twitch-Eventsub-Message-Type")
-		messageSignature    = header.Get("Twitch-Eventsub-Message-Signature")
-		subscriptionType    = header.Get("Twitch-Eventsub-Subscription-Type")
-		subscriptionVersion = header.Get("Twitch-Eventsub-Subscription-Version")
-	)
+	messageType := header.Get("Twitch-Eventsub-Message-Type")
 
 	metadata := WebhookNotificationMetadata{
-		MessageID:           messageId,
+		MessageID:           header.Get("Twitch-Eventsub-Message-Id"),
 		MessageRetry:        messageRetry,
 		MessageType:         messageType,
-		MessageSignature:    messageSignature,
+		MessageSignature:    header.Get("Twitch-Eventsub-Message-Signature"),
 		MessageTimestamp:    messageTimestamp,
-		SubscriptionType:    subscriptionType,
-		SubscriptionVersion: subscriptionVersion,
+		SubscriptionType:    header.Get("Twitch-Eventsub-Subscription-Type"),
+		SubscriptionVersion: header.Get("Twitch-Eventsub-Subscription-Version"),
 	}
 
-	if err = wh.callback.runEventCallback(EventType(messageType), subscriptionVersion, body, metadata); err != nil {
+	if err = wh.callback.runEventCallback(EventType(messageType), metadata.SubscriptionVersion, body, metadata); err != nil {
 		var status int
 
 		if errors.Is(err, ErrUndefinedEventType) {

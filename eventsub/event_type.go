@@ -2,10 +2,6 @@ package eventsub
 
 type EventType string
 
-func (c EventType) String() string {
-	return string(c)
-}
-
 const (
 	EventTypeAutomodMessageUpdate         EventType = "automod.message.update"
 	EventTypeAutomodMessageHold           EventType = "automod.message.hold"
@@ -20,3 +16,7 @@ const (
 	EventTypeChannelChatMessage           EventType = "channel.chat.message"
 	EventTypeConduitShardDisabled         EventType = "conduit.shard.disabled"
 )
+
+func (et EventType) String() string {
+	return string(et)
+}

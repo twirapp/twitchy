@@ -48,12 +48,12 @@ type (
 		SubscriptionVersion string       `json:"subscription_version"`
 	}
 
-	WebsocketNotificationPayload[Condition any] struct {
-		Subscription Subscription[Condition, WebsocketTransport] `json:"subscription"`
+	WebsocketNotificationPayload[C Condition] struct {
+		Subscription Subscription[C, WebsocketTransport] `json:"subscription"`
 	}
 
-	WebsocketNotificationMessage[Event, Condition any] struct {
-		WebsocketMessage[WebsocketNotificationMetadata, WebsocketNotificationPayload[Condition]]
+	WebsocketNotificationMessage[Event any, C Condition] struct {
+		WebsocketMessage[WebsocketNotificationMetadata, WebsocketNotificationPayload[C]]
 		Event Event `json:"event"`
 	}
 )
@@ -81,11 +81,11 @@ type (
 		SubscriptionVersion string       `json:"subscription_version"`
 	}
 
-	WebsocketRevocationPayload[Condition any] struct {
-		Subscription Subscription[Condition, WebsocketTransport] `json:"subscription"`
+	WebsocketRevocationPayload[C Condition] struct {
+		Subscription Subscription[C, WebsocketTransport] `json:"subscription"`
 	}
 
-	WebsocketRevocationMessage[Condition any] struct {
-		WebsocketMessage[WebsocketRevocationMetadata, WebsocketRevocationPayload[Condition]]
+	WebsocketRevocationMessage[C Condition] struct {
+		WebsocketMessage[WebsocketRevocationMetadata, WebsocketRevocationPayload[C]]
 	}
 )

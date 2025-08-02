@@ -1,7 +1,8 @@
 package eventsub
 
+// Condition is a marker for conditions.
 type Condition interface {
-	isCondition()
+	condition()
 }
 
 type AutomodMessageHoldCondition struct {
