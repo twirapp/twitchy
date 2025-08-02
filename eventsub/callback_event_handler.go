@@ -42,6 +42,8 @@ func (c *callback[Metadata]) runEventCallback(eventType, eventVersion string, bo
 		return runCallbackHandler(c.onChannelChatClearUserMessages, body, metadata)
 	case "channel.chat.message":
 		return runCallbackHandler(c.onChannelChatMessage, body, metadata)
+	case "conduit.shard.disabled":
+		return runCallbackHandler(c.onConduitShardDisabled, body, metadata)
 	default:
 		return ErrUndefinedEventType
 	}

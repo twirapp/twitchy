@@ -336,3 +336,14 @@ type ChannelChatMessageEvent struct {
 	// Has no effect if the message is not sent during a shared chat session.
 	IsSourceOnly bool `json:"is_source_only"`
 }
+
+type ConduitShardDisabledEvent struct {
+	// ConduitId The ID of the conduit.
+	ConduitId string `json:"conduit_id"`
+	// ShardId The ID of the disabled shard.
+	ShardId string `json:"shard_id"`
+	// Status The new status of the transport.
+	Status string `json:"status"`
+	// Transport The disabled transport.
+	Transport ConduitShardDisabledEventTransport `json:"transport"`
+}

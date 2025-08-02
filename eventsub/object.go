@@ -208,3 +208,16 @@ type Reply struct {
 	ThreadUserName    string `json:"thread_user_name"`
 	ThreadUserLogin   string `json:"thread_user_login"`
 }
+
+type ConduitShardDisabledEventTransport struct {
+	// Method websocket or webhook
+	Method string `json:"method"`
+	// CallBack Optional. Webhook callback URL. Empty if method is set to websocket.
+	CallBack string `json:"callback"`
+	// SessionId Optional. WebSocket session ID. Empty if  method is set to webhook.
+	SessionId string `json:"session_id"`
+	// ConnectedAt Optional. Time that the WebSocket session connected. Empty if method is set to webhook.
+	ConnectedAt TimestampUTC `json:"connected_at"`
+	// DisconnectAt Optional. Time that the WebSocket session disconnected. Empty if method is set to webhook.
+	DisconnectAt TimestampUTC `json:"disconnected_at"`
+}
