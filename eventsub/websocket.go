@@ -102,10 +102,10 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	lifecycleCtx, stopLifecycle := context.WithCancel(context.Background())
 	defer stopLifecycle()
 
-	stop := make(chan error)
-
 	// Context of the connection itself that can be canceled on connection restart.
 	connectionCtx, stopConnection := context.WithCancel(lifecycleCtx)
+
+	stop := make(chan error)
 
 	go ws.startKeepaliveWorker(lifecycleCtx)
 	go func() {
@@ -115,12 +115,7 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	for {
 		select {
 		case err := <-stop:
-			if ws.isReconnecting.Load() {
-				continue
-			}
-
 			stopConnection()
-
 			return err
 		case <-ws.restart:
 			stopConnection()
@@ -221,6 +216,9 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 		_, payload, err := ws.conn.Read(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
+				if ws.isReconnecting.Load() {
+					continue
+				}
 				return nil
 			}
 
@@ -251,7 +249,7 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 	}
 }
 
-// startKeepaliveWorker is trying to keep the websocket connection healthy and reconnect if needed.
+// startKeepaliveWorker starts and blocks on trying to keep the connection healthy and reconnect if needed.
 func (ws *Websocket) startKeepaliveWorker(ctx context.Context) {
 	const delay = 1 * time.Second
 
