@@ -145,7 +145,7 @@ func (c *callback[Metadata]) OnChannelChatMessage(onChannelChatMessage Handler[C
 	c.onChannelChatMessage = onChannelChatMessage
 }
 
-// OnChannelChatMessage invokes when any shard of conduit becomes disabled.
+// OnConduitShardDisabled invokes when any shard of conduit becomes disabled.
 //
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#conduitsharddisabled.
 func (c *callback[Metadata]) OnConduitShardDisabled(onConduitShardDisabled Handler[ConduitShardDisabledEvent, Metadata]) {

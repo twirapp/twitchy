@@ -11,6 +11,7 @@ type WebhookNotificationMetadata struct {
 }
 
 type WebhookNotificationCondition struct {
+	Condition
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 }
 

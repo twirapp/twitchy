@@ -50,6 +50,7 @@ type Websocket struct {
 	onReconnect      onWebsocketReconnect
 	onReconnectError onWebsocketReconnectError
 	onDuplicate      onWebsocketDuplicate
+	onDisconnect     onWebsocketDisconnect
 
 	callback[WebsocketNotificationMetadata]
 }
@@ -95,6 +96,10 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 
 		select {
 		case ws.stop <- struct{}{}:
+		}
+
+		if ws.onDisconnect != nil {
+			go ws.onDisconnect()
 		}
 	}()
 

@@ -6,13 +6,11 @@ import (
 	"time"
 )
 
-// Timestamp is a time.Time wrapper to handle timestamps in RFC3339 format in nanoseconds (as all eventsub timestamps
-// in this format).
+// Timestamp is a time.Time wrapper to handle timestamps in RFC3339 format in nanoseconds.
 type Timestamp struct {
 	time.Time
 }
 
-// timestampFromString ...
 func timestampFromString(timestamp string) (Timestamp, error) {
 	timestamp = strings.Trim(timestamp, "\"")
 
@@ -41,7 +39,6 @@ type TimestampUTC struct {
 	time.Time
 }
 
-// timestampUTCFromString parses specified string-based timestamp to the TimestampUTC.
 func timestampUTCFromString(timestamp string) (TimestampUTC, error) {
 	rfc3339NanoTimestamp, err := timestampFromString(timestamp)
 	if err != nil {
