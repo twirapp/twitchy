@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -15,7 +14,8 @@ import (
 )
 
 var (
-	ErrConnectionUnused = errors.New("connection is unused as 10 seconds subscription time limit exceeded")
+	ErrConnectionUnused = errors.New("connection is unused as subscription time limit exceeded")
+	ErrReconnectTimeout = errors.New("reconnect grace time expired")
 )
 
 const websocketURL = "wss://eventsub.wss.twitch.tv/ws"
@@ -31,7 +31,6 @@ type Websocket struct {
 	retryDelay    time.Duration
 
 	conn            *websocket.Conn
-	connLocker      sync.RWMutex
 	connDialOptions *websocket.DialOptions
 
 	keepaliveSeconds uint
@@ -40,9 +39,10 @@ type Websocket struct {
 	isActive       atomic.Bool
 	isReconnecting atomic.Bool
 
-	reconnected chan struct{}
+	restart     chan struct{}
 	welcome     chan struct{}
-	stop        chan struct{}
+	reconnected chan struct{}
+	disconnect  chan struct{}
 
 	callback[WebsocketNotificationMetadata]
 	callbackWebsocket
@@ -58,8 +58,9 @@ func newWebsocket(eventTracker EventTracker, options ...WebsocketOption) *Websoc
 		retryDelay:         500 * time.Second,
 		keepaliveSeconds:   600,
 		reconnected:        make(chan struct{}),
+		disconnect:         make(chan struct{}),
 		welcome:            make(chan struct{}),
-		stop:               make(chan struct{}),
+		restart:            make(chan struct{}),
 	}
 
 	for _, option := range options {
@@ -84,12 +85,9 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	if !ws.setActive() {
 		return nil
 	}
+
 	defer func() {
 		ws.setInactivate()
-
-		select {
-		case ws.stop <- struct{}{}:
-		}
 
 		if ws.onDisconnect != nil {
 			go ws.onDisconnect()
@@ -100,53 +98,40 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 		return err
 	}
 
-	connCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	// Context of the whole instance including side workers (e.g. keepalive worker).
+	lifecycleCtx, stopLifecycle := context.WithCancel(context.Background())
+	defer stopLifecycle()
 
-	go ws.keepalive(connCtx)
+	stop := make(chan error)
+
+	// Context of the connection itself that can be canceled on connection restart.
+	connectionCtx, stopConnection := context.WithCancel(lifecycleCtx)
+
+	go ws.startKeepaliveWorker(lifecycleCtx)
 	go func() {
-		select {
-		case <-ws.stop:
-			cancel()
-		}
+		stop <- ws.startReadWorker(connectionCtx)
 	}()
 
 	for {
-		var message websocketRawMessage
-
-		_, payload, err := ws.conn.Read(connCtx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return nil
+		select {
+		case err := <-stop:
+			if ws.isReconnecting.Load() {
+				continue
 			}
 
-			switch websocket.CloseStatus(err) {
-			case websocket.StatusNormalClosure:
-				if ws.isReconnecting.Load() {
-					<-ws.reconnected
-					continue
-				}
+			stopConnection()
 
-				if err = ws.reconnect(connCtx, ws.serverReconnectURL); err != nil {
-					if ws.onReconnectError != nil {
-						go ws.onReconnectError(err)
-					}
-				}
+			return err
+		case <-ws.restart:
+			stopConnection()
 
-				return nil
-			case websocket.StatusCode(4003):
-				return ErrConnectionUnused
-			}
+			connectionCtx, stopConnection = context.WithCancel(lifecycleCtx)
 
-			return fmt.Errorf("read from connection: %w", err)
-		}
-
-		if err = json.Unmarshal(payload, &message); err != nil {
-			return fmt.Errorf("unmarshal message: %w", err)
-		}
-
-		if err = ws.handleMessage(connCtx, message); err != nil {
-			return fmt.Errorf("handle message: %w", err)
+			go func() {
+				stop <- ws.startReadWorker(connectionCtx)
+			}()
+		case <-ws.disconnect:
+			stopLifecycle()
 		}
 	}
 }
@@ -156,8 +141,8 @@ func (ws *Websocket) Disconnect() error {
 		return nil
 	}
 
-	ws.stop <- struct{}{}
-	close(ws.stop)
+	ws.disconnect <- struct{}{}
+	close(ws.disconnect)
 
 	if err := ws.conn.Close(websocket.StatusNormalClosure, "client is shutting down"); err != nil {
 		return fmt.Errorf("close connection: %w", err)
@@ -187,16 +172,14 @@ func (ws *Websocket) connectWithoutRetry(ctx context.Context, url string) error 
 		return fmt.Errorf("connect to server: %w", err)
 	}
 
-	ws.connLocker.Lock()
 	ws.conn = conn
-	ws.connLocker.Unlock()
 
 	return nil
 }
 
 // reconnect reconnects to the new eventsub edge server according to the reconnect message flow.
 //
-// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#welcome-message.
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#reconnect-message.
 func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 	if !ws.setReconnecting() {
 		return nil
@@ -212,9 +195,7 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 	}()
 
 	// Save old connection to close it later after connecting to the new edge server.
-	ws.connLocker.RLock()
 	oldConnection := ws.conn
-	ws.connLocker.RUnlock()
 
 	ws.serverReconnectURL = reconnectURL
 
@@ -222,6 +203,7 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 		return fmt.Errorf("connect: %w", err)
 	}
 
+	ws.restart <- struct{}{}
 	<-ws.welcome
 
 	if err := oldConnection.Close(websocket.StatusNormalClosure, "connected to the new edge server"); err != nil {
@@ -231,8 +213,46 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 	return nil
 }
 
-// keepalive is trying to keep the websocket connection healthy and reconnect if needed.
-func (ws *Websocket) keepalive(ctx context.Context) {
+// startReadWorker starts and blocks on reading and processing messages from the connection.
+func (ws *Websocket) startReadWorker(ctx context.Context) error {
+	for {
+		var message websocketRawMessage
+
+		_, payload, err := ws.conn.Read(ctx)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+
+			switch websocket.CloseStatus(err) {
+			case websocket.StatusNormalClosure:
+				if ws.isReconnecting.Load() {
+					<-ws.reconnected
+					continue
+				}
+
+				return nil
+			case websocket.StatusCode(4003):
+				return ErrConnectionUnused
+			case websocket.StatusCode(4004):
+				return ErrReconnectTimeout
+			}
+
+			return fmt.Errorf("read from connection: %w", err)
+		}
+
+		if err = json.Unmarshal(payload, &message); err != nil {
+			return fmt.Errorf("unmarshal message: %w", err)
+		}
+
+		if err = ws.handleMessage(ctx, message); err != nil {
+			return fmt.Errorf("handle message: %w", err)
+		}
+	}
+}
+
+// startKeepaliveWorker is trying to keep the websocket connection healthy and reconnect if needed.
+func (ws *Websocket) startKeepaliveWorker(ctx context.Context) {
 	const delay = 1 * time.Second
 
 	keepalive := time.NewTicker(time.Second*time.Duration(ws.keepaliveSeconds) + delay)
