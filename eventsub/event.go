@@ -1142,5 +1142,5 @@ type ChannelChatMessageDeleteEvent struct {
 	// The user login of the user whose message was deleted.
 	TargetUserLogin string `json:"target_user_login"`
 	// A UUID that identifies the message that was removed.
-	MessageID string `json:"message_id"`
+	MessageId string `json:"message_id"`
 }
