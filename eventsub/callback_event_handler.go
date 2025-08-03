@@ -109,6 +109,8 @@ func (c *callback[Metadata]) runEventCallback(eventType EventType, eventVersion 
 		return runCallbackHandler(c.onChannelVipAdd, body, metadata)
 	case EventTypeChannelVipRemove:
 		return runCallbackHandler(c.onChannelVipRemove, body, metadata)
+	case EventTypeChannelMessageDelete:
+		return runCallbackHandler(c.onChannelChatMessageDelete, body, metadata)
 	default:
 		return ErrUndefinedEventType
 	}

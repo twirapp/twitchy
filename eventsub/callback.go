@@ -49,6 +49,7 @@ type callback[Metadata any] struct {
 	onUserUpdate                                  Handler[UserUpdateEvent, Metadata]
 	onChannelVipAdd                               Handler[ChannelVipAddEvent, Metadata]
 	onChannelVipRemove                            Handler[ChannelVipRemoveEvent, Metadata]
+	onChannelChatMessageDelete                    Handler[ChannelChatMessageDeleteEvent, Metadata]
 }
 
 // OnAutomodMessageHold invokes when message is caught by automod for review.
@@ -339,4 +340,10 @@ func (c *callback[Metadata]) OnChannelVipAdd(onChannelVipAdd Handler[ChannelVipA
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelvipremove.
 func (c *callback[Metadata]) OnChannelVipRemove(onChannelVipRemove Handler[ChannelVipRemoveEvent, Metadata]) {
 	c.onChannelVipRemove = onChannelVipRemove
+}
+
+// OnChannelChatMessageDelete invokes when a user deletes a message in a channel's chat room.
+// Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage_delete.
+func (c *callback[Metadata]) OnChannelChatMessageDelete(onChannelChatMessageDelete Handler[ChannelChatMessageDeleteEvent, Metadata]) {
+	c.onChannelChatMessageDelete = onChannelChatMessageDelete
 }

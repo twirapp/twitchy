@@ -1127,3 +1127,20 @@ type ChannelVipRemoveEvent struct {
 	// The broadcaster display name.
 	BroadcasterUserName string `json:"broadcaster_user_name"`
 }
+
+type ChannelChatMessageDeleteEvent struct {
+	// The broadcaster user ID.
+	BroadcasterUserId string `json:"broadcaster_user_id"`
+	// The broadcaster display name.
+	BroadcasterUserName string `json:"broadcaster_user_name"`
+	// The broadcaster login.
+	BroadcasterUserLogin string `json:"broadcaster_user_login"`
+	// The ID of the user whose message was deleted.
+	TargetUserId string `json:"target_user_id"`
+	// The user name of the user whose message was deleted.
+	TargetUserName string `json:"target_user_name"`
+	// The user login of the user whose message was deleted.
+	TargetUserLogin string `json:"target_user_login"`
+	// A UUID that identifies the message that was removed.
+	MessageID string `json:"message_id"`
+}
