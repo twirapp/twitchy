@@ -1044,7 +1044,7 @@ type ChannelUnbanRequestCreateEvent struct {
 	// The broadcaster’s display name.
 	BroadcasterUserName string `json:"broadcaster_user_name"`
 	// User ID of user that is requesting to be unbanned.
-	UserI string `json:"user_id"`
+	UserId string `json:"user_id"`
 	// The user’s login name.
 	UserLogin string `json:"user_login"`
 	// The user’s display name.
