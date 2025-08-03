@@ -44,15 +44,8 @@ type Websocket struct {
 	welcome     chan struct{}
 	stop        chan struct{}
 
-	onPing           onWebsocketPing
-	onWelcome        onWebsocketWelcome
-	onKeepalive      onWebsocketKeepalive
-	onReconnect      onWebsocketReconnect
-	onReconnectError onWebsocketReconnectError
-	onDuplicate      onWebsocketDuplicate
-	onDisconnect     onWebsocketDisconnect
-
 	callback[WebsocketNotificationMetadata]
+	callbackWebsocket
 }
 
 func newWebsocket(eventTracker EventTracker, options ...WebsocketOption) *Websocket {

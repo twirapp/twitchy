@@ -1,33 +1,34 @@
 package eventsub
 
-type (
-	onRevocation              = func(WebhookRevocationNotification)
-	onVerification            = func(WebhookCallbackVerificationNotification)
-	onDuplicate               = func(MessageID)
-	onUserAuthorizationRevoke = Handler[UserAuthorizationRevokeEvent, WebhookNotificationMetadata]
-)
+// callbackWebhook is a store for all EventSub webhook-specific callbacks.
+type callbackWebhook[Metadata any] struct {
+	onRevocation   func(WebhookRevocationNotification)
+	onVerification func(WebhookCallbackVerificationNotification)
 
-// OnDuplicate invokes when duplicate message is caught.
-func (wh *Webhook) OnDuplicate(onDuplicate onDuplicate) {
-	wh.onDuplicate = onDuplicate
+	onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, Metadata]
 }
 
 // OnRevocation invokes when webhook subscription revocation notification is caught (however, this message is processed
 // automatically).
 //
 // Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#revoking-your-subscription.
-func (wh *Webhook) OnRevocation(onRevocation onRevocation) {
-	wh.onRevocation = onRevocation
+func (cw *callbackWebhook[Metadata]) OnRevocation(onRevocation func(WebhookRevocationNotification)) {
+	cw.onRevocation = onRevocation
 }
 
 // OnVerification invokes when webhook verification notification is caught (however, this message is processed
 // automatically).
 //
 // Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#verifying-the-event-message.
-func (wh *Webhook) OnVerification(onVerification onVerification) {
-	wh.onVerification = onVerification
+func (cw *callbackWebhook[Metadata]) OnVerification(onVerification func(WebhookCallbackVerificationNotification)) {
+	cw.onVerification = onVerification
 }
 
-func (wh *Webhook) OnUserAuthorizationRevoke(handler onUserAuthorizationRevoke) {
-	wh.onUserAuthorizationRevoke = handler
+// OnUserAuthorizationRevoke invokes when a user revokes authorization for an application.
+//
+// NOTE: This subscription type is only supported by webhooks, and cannot be used with WebSockets.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#userauthorizationrevoke.
+func (cw *callbackWebhook[Metadata]) OnUserAuthorizationRevoke(onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, Metadata]) {
+	cw.onUserAuthorizationRevoke = onUserAuthorizationRevoke
 }

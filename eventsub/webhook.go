@@ -18,12 +18,8 @@ type Webhook struct {
 	secret                    []byte
 	withSignatureVerification bool
 
-	onRevocation              onRevocation
-	onVerification            onVerification
-	onDuplicate               onDuplicate
-	onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, WebhookNotificationMetadata]
-
 	callback[WebhookNotificationMetadata]
+	callbackWebhook[WebhookNotificationMetadata]
 }
 
 func newWebhook(secret []byte, eventTracker EventTracker, verifySignature bool) (*Webhook, error) {
