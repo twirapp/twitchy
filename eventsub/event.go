@@ -873,7 +873,7 @@ type ChannelPointsCustomRewardUpdateEvent struct {
 	RedemptionsRedeemedCurrentStream int `json:"redemptions_redeemed_current_stream,omitempty"`
 }
 
-type ChannelPointsRewardRemoveEvent struct {
+type ChannelPointsCustomRewardRemoveEvent struct {
 	// The reward identifier.
 	ID string `json:"id"`
 	// The requested broadcaster ID.
