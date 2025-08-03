@@ -82,9 +82,9 @@ func (c *callback[Metadata]) runEventCallback(eventType EventType, eventVersion 
 	case EventTypeUserAuthorizationRevoke:
 		return runCallbackHandler(c.onUserAuthorizationRevoke, body, metadata)
 	case EventTypeChannelPointsRewardAdd:
-		return runCallbackHandler(c.onChannelPointsRewardAdd, body, metadata)
+		return runCallbackHandler(c.onChannelPointsCustomRewardAdd, body, metadata)
 	case EventTypeChannelPointsRewardUpdate:
-		return runCallbackHandler(c.onChannelPointsRewardUpdate, body, metadata)
+		return runCallbackHandler(c.onChannelPointsCustomRewardUpdate, body, metadata)
 	case EventTypeChannelPointsRewardRemove:
 		return runCallbackHandler(c.onChannelPointsRewardRemove, body, metadata)
 	case EventTypeStreamOffline:

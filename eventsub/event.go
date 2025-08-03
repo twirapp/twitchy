@@ -785,7 +785,7 @@ type UserAuthorizationRevokeEvent struct {
 	UserName string `json:"user_name"`
 }
 
-type ChannelPointsRewardAddEvent struct {
+type ChannelPointsCustomRewardAddEvent struct {
 	// The reward identifier.
 	Id string `json:"id"`
 	// The requested broadcaster ID.

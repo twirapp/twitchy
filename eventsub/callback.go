@@ -35,8 +35,8 @@ type callback[Metadata any] struct {
 	onChannelPointsAutomaticRewardRedemptionAdd   Handler[ChannelPointsAutomaticRewardRedemptionAddEvent, Metadata]
 	onChannelPointsAutomaticRewardRedemptionAddV2 Handler[ChannelPointsAutomaticRewardRedemptionAddEventV2, Metadata]
 	onUserAuthorizationRevoke                     Handler[UserAuthorizationRevokeEvent, Metadata]
-	onChannelPointsRewardAdd                      Handler[ChannelPointsRewardAddEvent, Metadata]
-	onChannelPointsRewardUpdate                   Handler[ChannelPointsRewardUpdateEvent, Metadata]
+	onChannelPointsCustomRewardAdd                Handler[ChannelPointsCustomRewardAddEvent, Metadata]
+	onChannelPointsCustomRewardUpdate             Handler[ChannelPointsRewardUpdateEvent, Metadata]
 	onChannelPointsRewardRemove                   Handler[ChannelPointsRewardRemoveEvent, Metadata]
 	onStreamOffline                               Handler[StreamOfflineEvent, Metadata]
 	onStreamOnline                                Handler[StreamOnlineEvent, Metadata]
@@ -258,16 +258,16 @@ func (c *callback[Metadata]) OnUserAuthorizationRevoke(onUserAuthorizationRevoke
 	c.onUserAuthorizationRevoke = onUserAuthorizationRevoke
 }
 
-// OnChannelPointsRewardAdd invokes when a broadcaster adds a custom channel points reward.
+// OnChannelPointsCustomRewardAdd invokes when a broadcaster adds a custom channel points reward.
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchannel_points_rewardadd.
-func (c *callback[Metadata]) OnChannelPointsRewardAdd(onChannelPointsRewardAdd Handler[ChannelPointsRewardAddEvent, Metadata]) {
-	c.onChannelPointsRewardAdd = onChannelPointsRewardAdd
+func (c *callback[Metadata]) OnChannelPointsCustomRewardAdd(onChannelPointsRewardAdd Handler[ChannelPointsCustomRewardAddEvent, Metadata]) {
+	c.onChannelPointsCustomRewardAdd = onChannelPointsRewardAdd
 }
 
-// OnChannelPointsRewardUpdate invokes when a broadcaster updates a custom channel points reward.
+// OnChannelPointsCustomRewardUpdate invokes when a broadcaster updates a custom channel points reward.
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchannel_points_rewardupdate.
-func (c *callback[Metadata]) OnChannelPointsRewardUpdate(onChannelPointsRewardUpdate Handler[ChannelPointsRewardUpdateEvent, Metadata]) {
-	c.onChannelPointsRewardUpdate = onChannelPointsRewardUpdate
+func (c *callback[Metadata]) OnChannelPointsCustomRewardUpdate(onChannelPointsRewardUpdate Handler[ChannelPointsRewardUpdateEvent, Metadata]) {
+	c.onChannelPointsCustomRewardUpdate = onChannelPointsRewardUpdate
 }
 
 // OnChannelPointsRewardRemove invokes when a broadcaster removes a custom channel points reward.
