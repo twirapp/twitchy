@@ -1,9 +1,10 @@
 package eventsub
 
 type (
-	onRevocation   = func(WebhookRevocationNotification)
-	onVerification = func(WebhookCallbackVerificationNotification)
-	onDuplicate    = func(MessageID)
+	onRevocation              = func(WebhookRevocationNotification)
+	onVerification            = func(WebhookCallbackVerificationNotification)
+	onDuplicate               = func(MessageID)
+	onUserAuthorizationRevoke = Handler[UserAuthorizationRevokeEvent, WebhookNotificationMetadata]
 )
 
 // OnDuplicate invokes when duplicate message is caught.
@@ -25,4 +26,8 @@ func (wh *Webhook) OnRevocation(onRevocation onRevocation) {
 // Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#verifying-the-event-message.
 func (wh *Webhook) OnVerification(onVerification onVerification) {
 	wh.onVerification = onVerification
+}
+
+func (wh *Webhook) OnUserAuthorizationRevoke(handler onUserAuthorizationRevoke) {
+	wh.onUserAuthorizationRevoke = handler
 }

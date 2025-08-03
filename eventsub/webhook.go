@@ -18,9 +18,10 @@ type Webhook struct {
 	secret                    []byte
 	withSignatureVerification bool
 
-	onRevocation   onRevocation
-	onVerification onVerification
-	onDuplicate    onDuplicate
+	onRevocation              onRevocation
+	onVerification            onVerification
+	onDuplicate               onDuplicate
+	onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, WebhookNotificationMetadata]
 
 	callback[WebhookNotificationMetadata]
 }
