@@ -16,7 +16,7 @@ type (
 		MessageId           string       `json:"message_id"`
 		MessageType         string       `json:"message_type"`
 		MessageTimestamp    TimestampUTC `json:"message_timestamp"`
-		SubscriptionType    string       `json:"subscription_type"`
+		SubscriptionType    EventType    `json:"subscription_type"`
 		SubscriptionVersion string       `json:"subscription_version"`
 	}
 
