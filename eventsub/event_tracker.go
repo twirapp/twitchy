@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-const EventTrackingTTL = 10*time.Minute + 5*time.Second
+// EventTTL is a desired (according to the Twitch's documentation) time-to-live for events in storage to deduplicate them.
+// In most cases this is what you want use as TTL for events in your custom EventTracker implementation (if it's not a test
+// or something like that).
+const EventTTL = 10 * time.Minute
 
 // EventTracker tracks events from EventSub to avoid handling the same (duplicate) events multiple times.
 type EventTracker interface {

@@ -1,5 +1,6 @@
 package eventsub
 
+// EventType is a type of EventSub event.
 type EventType string
 
 const (

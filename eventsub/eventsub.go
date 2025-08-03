@@ -14,7 +14,7 @@ type EventSub struct {
 func New(options ...Option) EventSub {
 	eventSub := EventSub{
 		// TODO: respect the event tracking TTL from options.
-		eventTracker: NewInMemoryEventTracker(EventTrackingTTL),
+		eventTracker: NewInMemoryEventTracker(EventTTL),
 	}
 
 	for _, option := range options {
