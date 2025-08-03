@@ -758,16 +758,16 @@ func (c ChannelUnbanRequestResolveEventStatus) String() string {
 	return string(c)
 }
 
-type StreamOfflineEventType string
+type StreamOnlineEventType string
 
 const (
-	StreamOfflineEventTypeLive       StreamOfflineEventType = "live"
-	StreamOfflineEventTypePlaylist   StreamOfflineEventType = "playlist"
-	StreamOfflineEventTypeWatchParty StreamOfflineEventType = "watch_party"
-	StreamOfflineEventTypePremiere   StreamOfflineEventType = "premiere"
-	StreamOfflineEventTypeRerun      StreamOfflineEventType = "rerun"
+	StreamOfflineEventTypeLive       StreamOnlineEventType = "live"
+	StreamOfflineEventTypePlaylist   StreamOnlineEventType = "playlist"
+	StreamOfflineEventTypeWatchParty StreamOnlineEventType = "watch_party"
+	StreamOfflineEventTypePremiere   StreamOnlineEventType = "premiere"
+	StreamOfflineEventTypeRerun      StreamOnlineEventType = "rerun"
 )
 
-func (c StreamOfflineEventType) String() string {
+func (c StreamOnlineEventType) String() string {
 	return string(c)
 }

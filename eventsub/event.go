@@ -917,7 +917,7 @@ type ChannelPointsCustomRewardRemoveEvent struct {
 	RedemptionsRedeemedCurrentStream int `json:"redemptions_redeemed_current_stream,omitempty"`
 }
 
-type StreamOfflineEvent struct {
+type StreamOnlineEvent struct {
 	// The id of the stream.
 	Id string `json:"id"`
 	// The broadcaster’s user id.
@@ -927,12 +927,12 @@ type StreamOfflineEvent struct {
 	// The broadcaster’s user display name.
 	BroadcasterUserName string `json:"broadcaster_user_name"`
 	// The stream type. Valid values are: live, playlist, watch_party, premiere, rerun.
-	Type StreamOfflineEventType `json:"type"`
+	Type StreamOnlineEventType `json:"type"`
 	// The timestamp at which the stream went online at.
 	StartedAt TimestampUTC `json:"started_at"`
 }
 
-type StreamOnlineEvent struct {
+type StreamOfflineEvent struct {
 	// The broadcaster’s user id.
 	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// The broadcaster’s user login.
