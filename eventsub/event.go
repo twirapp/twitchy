@@ -370,7 +370,7 @@ type ChannelBanEvent struct {
 	// The reason behind the ban.
 	Reason string `json:"reason"`
 	// Will be null if permanent ban. If it is a timeout, this field shows when the timeout will end.
-	EndsAt string `json:"ends_at"`
+	EndsAt TimestampUTC `json:"ends_at"`
 	// Indicates whether the ban is permanent (true) or a timeout (false). If true, ends_at will be null.
 	IsPermanent bool `json:"is_permanent"`
 }
