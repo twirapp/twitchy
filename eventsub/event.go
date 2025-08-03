@@ -875,9 +875,9 @@ type ChannelPointsCustomRewardUpdateEvent struct {
 
 type ChannelPointsCustomRewardRemoveEvent struct {
 	// The reward identifier.
-	ID string `json:"id"`
+	Id string `json:"id"`
 	// The requested broadcaster ID.
-	BroadcasterUserID string `json:"broadcaster_user_id"`
+	BroadcasterUserId string `json:"broadcaster_user_id"`
 	// The requested broadcaster login.
 	BroadcasterUserLogin string `json:"broadcaster_user_login"`
 	// The requested broadcaster display name.
