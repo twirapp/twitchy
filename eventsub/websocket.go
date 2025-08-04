@@ -58,7 +58,6 @@ func newWebsocket(eventTracker EventTracker, options ...WebsocketOption) *Websoc
 		retryDelay:         500 * time.Second,
 		keepaliveSeconds:   600,
 		reconnected:        make(chan struct{}),
-		disconnect:         make(chan struct{}),
 		welcome:            make(chan struct{}),
 		restart:            make(chan struct{}),
 	}
@@ -85,6 +84,10 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	if !ws.setActive() {
 		return nil
 	}
+
+	// We should recreate disconnect channel on each connect so user can do connect-disconnect cycle as many times as he
+	// wants and don't get panic on double-close already closed channel.
+	ws.disconnect = make(chan struct{})
 
 	defer func() {
 		ws.setInactivate()
