@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"strconv"
 )
 
 var ErrInvalidWebhookSecret = errors.New("secret must be a minimum of 10 and maximum of 100 characters long")
@@ -97,52 +96,6 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header, body []byte) {
-	var (
-		rawMessageRetry     = header.Get("Twitch-Eventsub-Message-Retry")
-		rawMessageTimestamp = header.Get("Twitch-Eventsub-Message-Timestamp")
-	)
-
-	messageRetry, err := strconv.Atoi(rawMessageRetry)
-	if err != nil {
-		http.Error(w, "invalid message retry header type", http.StatusBadRequest)
-		return
-	}
-
-	messageTimestamp, err := timestampUTCFromString(rawMessageTimestamp)
-	if err != nil {
-		http.Error(w, "invalid message timestamp header type", http.StatusBadRequest)
-		return
-	}
-
-	messageType := header.Get("Twitch-Eventsub-Message-Type")
-
-	metadata := WebhookNotificationMetadata{
-		MessageID:           header.Get("Twitch-Eventsub-Message-Id"),
-		MessageRetry:        messageRetry,
-		MessageType:         messageType,
-		MessageSignature:    header.Get("Twitch-Eventsub-Message-Signature"),
-		MessageTimestamp:    messageTimestamp,
-		SubscriptionType:    header.Get("Twitch-Eventsub-Subscription-Type"),
-		SubscriptionVersion: header.Get("Twitch-Eventsub-Subscription-Version"),
-	}
-
-	if err = wh.callback.runEventCallback(EventType(messageType), metadata.SubscriptionVersion, body, metadata); err != nil {
-		var status int
-
-		if errors.Is(err, ErrUndefinedEventType) {
-			status = http.StatusBadRequest
-		} else {
-			status = http.StatusInternalServerError
-		}
-
-		http.Error(w, err.Error(), status)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
 func (wh *Webhook) handleRevocation(w http.ResponseWriter, body []byte) {
 	if _, ok := runWebhookHandler(wh.onRevocation, w, body); !ok {
 		return
@@ -159,8 +112,6 @@ func (wh *Webhook) handleCallbackVerification(w http.ResponseWriter, body []byte
 
 	w.Header().Set("Content-Type", "text/plain")
 	_, _ = w.Write([]byte(notification.Challenge))
-
-	w.WriteHeader(http.StatusOK)
 }
 
 func (wh *Webhook) isValidSignature(signature string, body []byte, messageId, messageTimestamp string) bool {
@@ -181,7 +132,7 @@ func runWebhookHandler[Payload any](callback func(Payload), w http.ResponseWrite
 	var payload Payload
 
 	if callback != nil {
-		if err := json.Unmarshal(body, payload); err != nil {
+		if err := json.Unmarshal(body, &payload); err != nil {
 			http.Error(w, "failed to unmarshal payload", http.StatusInternalServerError)
 			return payload, false
 		}

@@ -6,7 +6,7 @@ type WebhookNotificationMetadata struct {
 	MessageType         string
 	MessageSignature    string
 	MessageTimestamp    TimestampUTC
-	SubscriptionType    string
+	SubscriptionType    EventType
 	SubscriptionVersion string
 }
 
