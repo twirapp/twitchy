@@ -1,6 +1,7 @@
 package concurrentmap
 
 import (
+	"context"
 	"hash/fnv"
 	"sync"
 	"time"
@@ -11,8 +12,9 @@ const shardCount = 32
 type Hasher[K comparable] func(K) uint64
 
 type ConcurrentMap[K comparable, V any] struct {
-	shards [shardCount]*shard[K, V]
-	hasher Hasher[K]
+	shards   [shardCount]*shard[K, V]
+	hasher   Hasher[K]
+	entryTTL time.Duration
 }
 
 type (
@@ -23,24 +25,27 @@ type (
 
 	shard[K comparable, V any] struct {
 		entries map[K]entry[V]
-		sync.RWMutex
+		sync.Mutex
 	}
 )
 
-func (s *shard[K, V]) startTTLEviction(entryTTL time.Duration) {
+func (s *shard[K, V]) startTTLEviction(ctx context.Context, entryTTL time.Duration) {
 	ticker := time.NewTicker(entryTTL / 2)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		cutoff := time.Now().Add(-entryTTL)
-
-		s.Lock()
-		for key, ety := range s.entries {
-			if ety.timestamp.Before(cutoff) {
-				delete(s.entries, key)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			s.Lock()
+			for key, value := range s.entries {
+				if time.Since(value.timestamp) >= entryTTL {
+					delete(s.entries, key)
+				}
 			}
+			s.Unlock()
 		}
-		s.Unlock()
 	}
 }
 
@@ -50,7 +55,7 @@ func newShard[K comparable, V any]() *shard[K, V] {
 	}
 }
 
-func newConcurrentMap[K comparable, V any](hasher Hasher[K], entryTTL time.Duration) ConcurrentMap[K, V] {
+func newConcurrentMap[K comparable, V any](ctx context.Context, hasher Hasher[K], entryTTL time.Duration) ConcurrentMap[K, V] {
 	var shards [shardCount]*shard[K, V]
 
 	for index := range shardCount {
@@ -58,14 +63,14 @@ func newConcurrentMap[K comparable, V any](hasher Hasher[K], entryTTL time.Durat
 		shards[index] = sh
 
 		if entryTTL > 0 {
-			// TODO: clean etu huetu
-			go sh.startTTLEviction(entryTTL)
+			go sh.startTTLEviction(ctx, entryTTL)
 		}
 	}
 
 	return ConcurrentMap[K, V]{
-		shards: shards,
-		hasher: hasher,
+		shards:   shards,
+		hasher:   hasher,
+		entryTTL: entryTTL,
 	}
 }
 
@@ -77,8 +82,8 @@ func newStringHasher() Hasher[string] {
 	}
 }
 
-func NewString[V any](entryTTL time.Duration) ConcurrentMap[string, V] {
-	return newConcurrentMap[string, V](newStringHasher(), entryTTL)
+func NewString[V any](ctx context.Context, entryTTL time.Duration) ConcurrentMap[string, V] {
+	return newConcurrentMap[string, V](ctx, newStringHasher(), entryTTL)
 }
 
 func (cm *ConcurrentMap[K, V]) GetOrSet(key K, value V) (V, bool) {
@@ -88,6 +93,10 @@ func (cm *ConcurrentMap[K, V]) GetOrSet(key K, value V) (V, bool) {
 	defer shardEntry.Unlock()
 
 	if storedValue, exists := shardEntry.entries[key]; exists {
+		if time.Since(storedValue.timestamp) >= cm.entryTTL {
+			delete(shardEntry.entries, key)
+		}
+
 		return storedValue.value, true
 	}
 
