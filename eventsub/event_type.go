@@ -32,9 +32,9 @@ const (
 	EventTypeChannelPointsCustomRewardRedemptionUpdate EventType = "channel.channel_points_custom_reward_redemption.update"
 	EventTypeChannelPointsAutomaticRewardRedemptionAdd EventType = "channel.channel_points_automatic_reward_redemption.add"
 	EventTypeUserAuthorizationRevoke                   EventType = "user.authorization.revoke"
-	EventTypeChannelPointsRewardAdd                    EventType = "channel.points.reward.add"
-	EventTypeChannelPointsRewardUpdate                 EventType = "channel.points.reward.update"
-	EventTypeChannelPointsRewardRemove                 EventType = "channel.points.reward.remove"
+	EventTypeChannelPointsRewardAdd                    EventType = "channel.channel_points_custom_reward.add"
+	EventTypeChannelPointsRewardUpdate                 EventType = "channel.channel_points_custom_reward.update"
+	EventTypeChannelPointsRewardRemove                 EventType = "channel.channel_points_custom_reward.remove"
 	EventTypeStreamOffline                             EventType = "stream.offline"
 	EventTypeStreamOnline                              EventType = "stream.online"
 	EventTypeChannelSubscribe                          EventType = "channel.subscribe"
@@ -46,7 +46,7 @@ const (
 	EventTypeUserUpdate                                EventType = "user.update"
 	EventTypeChannelVipAdd                             EventType = "channel.vip.add"
 	EventTypeChannelVipRemove                          EventType = "channel.vip.remove"
-	EventTypeChannelMessageDelete                      EventType = "channel.message.delete"
+	EventTypeChannelMessageDelete                      EventType = "channel.chat.message_delete"
 )
 
 func (et EventType) String() string {

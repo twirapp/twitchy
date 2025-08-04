@@ -82,7 +82,7 @@ func (c *callback[Metadata]) runEventCallback(eventType EventType, eventVersion 
 			return runCallbackHandler(c.onChannelPointsAutomaticRewardRedemptionAddV2, payload, metadata)
 		}
 	case EventTypeUserAuthorizationRevoke:
-		return runCallbackHandler(c.webhook.onUserAuthorizationRevoke, payload, metadata)
+		return runCallbackHandler(c.onUserAuthorizationRevoke, payload, metadata)
 	case EventTypeChannelPointsRewardAdd:
 		return runCallbackHandler(c.onChannelPointsCustomRewardAdd, payload, metadata)
 	case EventTypeChannelPointsRewardUpdate:

@@ -52,6 +52,7 @@ type callback[Metadata any] struct {
 	onChannelVipAdd                               Handler[ChannelVipAddEvent, Metadata]
 	onChannelVipRemove                            Handler[ChannelVipRemoveEvent, Metadata]
 	onChannelChatMessageDelete                    Handler[ChannelChatMessageDeleteEvent, Metadata]
+	onUserAuthorizationRevoke                     Handler[UserAuthorizationRevokeEvent, Metadata]
 }
 
 // OnDuplicate invokes when duplicate message is caught.
@@ -376,4 +377,13 @@ func (c *callback[Metadata]) OnChannelVipRemove(onChannelVipRemove Handler[Chann
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channelchatmessage_delete.
 func (c *callback[Metadata]) OnChannelChatMessageDelete(onChannelChatMessageDelete Handler[ChannelChatMessageDeleteEvent, Metadata]) {
 	c.onChannelChatMessageDelete = onChannelChatMessageDelete
+}
+
+// OnUserAuthorizationRevoke invokes when a user revokes authorization for an application.
+//
+// NOTE: This subscription type is only supported by webhooks, and cannot be used with WebSockets.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#userauthorizationrevoke.
+func (c *callback[Metadata]) OnUserAuthorizationRevoke(onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, Metadata]) {
+	c.onUserAuthorizationRevoke = onUserAuthorizationRevoke
 }
