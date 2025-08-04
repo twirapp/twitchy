@@ -102,7 +102,7 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	lifecycleCtx, stopLifecycle := context.WithCancel(context.Background())
 	defer stopLifecycle()
 
-	// Context of the connection itself that can be canceled on connection restart.
+	// Context of the connection itself that can be canceled to restart for example.
 	connectionCtx, stopConnection := context.WithCancel(lifecycleCtx)
 
 	stop := make(chan error)
@@ -115,11 +115,15 @@ func (ws *Websocket) Connect(ctx context.Context) error {
 	for {
 		select {
 		case err := <-stop:
+			if ws.isReconnecting.Load() {
+				continue
+			}
 			stopConnection()
 			return err
 		case <-ws.restart:
 			stopConnection()
 
+			// Restore connection context to reuse it on next restart (reconnect).
 			connectionCtx, stopConnection = context.WithCancel(lifecycleCtx)
 
 			go func() {
@@ -192,15 +196,21 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 	// Save old connection to close it later after connecting to the new edge server.
 	oldConnection := ws.conn
 
+	// Set new server reconnect URL.
 	ws.serverReconnectURL = reconnectURL
 
+	// Connect to the new eventsub edge server.
 	if err := ws.connect(ctx, reconnectURL); err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
 
+	// Signal to read worker to stop reading from old connection and restart with new one.
 	ws.restart <- struct{}{}
+
+	// Wait for a welcome message on new connection.
 	<-ws.welcome
 
+	// Close old connection to complete reconnect flow.
 	if err := oldConnection.Close(websocket.StatusNormalClosure, "connected to the new edge server"); err != nil {
 		return fmt.Errorf("close old connection: %w", err)
 	}
@@ -216,9 +226,6 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 		_, payload, err := ws.conn.Read(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				if ws.isReconnecting.Load() {
-					continue
-				}
 				return nil
 			}
 

@@ -1,21 +1,14 @@
 package eventsub
 
-import (
-	"time"
-)
-
+// MessageID is an identifier of the event message sent from eventsub server.
 type MessageID = string
 
 type EventSub struct {
-	eventTracker     EventTracker
-	eventTrackingTTL time.Duration
+	eventTracker EventTracker
 }
 
 func New(options ...Option) EventSub {
-	eventSub := EventSub{
-		// TODO: respect the event tracking TTL from options.
-		eventTracker: NewInMemoryEventTracker(EventTTL),
-	}
+	var eventSub EventSub
 
 	for _, option := range options {
 		option(&eventSub)
@@ -24,10 +17,12 @@ func New(options ...Option) EventSub {
 	return eventSub
 }
 
+// Webhook returns new Webhook instance with shared EventSub.
 func (es *EventSub) Webhook(secret []byte, verifySignature bool) (*Webhook, error) {
 	return newWebhook(secret, es.eventTracker, verifySignature)
 }
 
+// Websocket returns new Websocket instance with shared EventSub.
 func (es *EventSub) Websocket(options ...WebsocketOption) *Websocket {
 	return newWebsocket(es.eventTracker, options...)
 }
