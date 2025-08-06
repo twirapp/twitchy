@@ -4,9 +4,6 @@ import (
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
 )
 
-// MessageID is an identifier of the event message sent from eventsub server.
-type MessageID = string
-
 type EventSub struct {
 	eventTracker eventtracker.EventTracker
 }

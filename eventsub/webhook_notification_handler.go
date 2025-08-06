@@ -9,8 +9,8 @@ import (
 )
 
 type webhookRawNotification struct {
-	Subscription json.RawMessage `json:"subscription"`
-	Event        json.RawMessage `json:"event"`
+	_     json.RawMessage `json:"subscription"`
+	Event json.RawMessage `json:"event"`
 }
 
 func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header, body []byte) {

@@ -2,16 +2,17 @@ package eventtracker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisKeyBuilder interface {
-	// Build builds key for redis to store event with provided EventID.
-	Build(eventID EventID) string
-}
+var ErrNoRedisKeyBuilder = errors.New("redis key builder should be provided")
+
+// RedisKeyBuilder function builds key for redis to store event with provided event identifier.
+type RedisKeyBuilder func(eventID string) string
 
 // RedisEventTracker is a standard implementation of EventTracker for Redis, which is suitable for cases where you have
 // multiple instances of an application and need to track events in them synchronously.
@@ -24,6 +25,10 @@ type RedisEventTracker struct {
 var _ EventTracker = (*RedisEventTracker)(nil)
 
 func NewRedisEventTracker(client *redis.Client, keyBuilder RedisKeyBuilder, options ...Option) (RedisEventTracker, error) {
+	if keyBuilder == nil {
+		return RedisEventTracker{}, ErrNoRedisKeyBuilder
+	}
+
 	opt := option{
 		eventTTL: EventTTL,
 	}
@@ -40,7 +45,7 @@ func NewRedisEventTracker(client *redis.Client, keyBuilder RedisKeyBuilder, opti
 }
 
 func (ret RedisEventTracker) Track(ctx context.Context, eventID string) (bool, error) {
-	key := ret.keyBuilder.Build(eventID)
+	key := ret.keyBuilder(eventID)
 
 	firstTimeSeen, err := ret.client.SetNX(ctx, key, 1, ret.eventTTL).Result()
 	if err != nil {

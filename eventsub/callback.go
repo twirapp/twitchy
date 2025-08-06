@@ -2,11 +2,9 @@ package eventsub
 
 type Handler[Event any, Metadata any] func(Event, Metadata)
 
-// callback is a store for all EventSub callbacks that are general (available on all transports).
+// callback is a store for EventSub callbacks.
 type callback[Metadata any] struct {
-	webhook callbackWebhook[Metadata]
-
-	onDuplicate                                   func(MessageID)
+	onDuplicate                                   func(eventID string)
 	onAutomodMessageHold                          Handler[AutomodMessageHoldEvent, Metadata]
 	onAutomodMessageHoldV2                        Handler[AutomodMessageHoldEventV2, Metadata]
 	onAutomodMessageUpdate                        Handler[AutomodMessageUpdateEvent, Metadata]
@@ -56,7 +54,7 @@ type callback[Metadata any] struct {
 }
 
 // OnDuplicate invokes when duplicate message is caught.
-func (c *callback[Metadata]) OnDuplicate(onDuplicate func(MessageID)) {
+func (c *callback[Metadata]) OnDuplicate(onDuplicate func(eventID string)) {
 	c.onDuplicate = onDuplicate
 }
 

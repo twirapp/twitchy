@@ -19,8 +19,10 @@ type Webhook struct {
 	secret                    []byte
 	withSignatureVerification bool
 
+	onRevocation   func(WebhookRevocationNotification)
+	onVerification func(WebhookCallbackVerificationNotification)
+
 	callback[WebhookNotificationMetadata]
-	callbackWebhook[WebhookNotificationMetadata]
 }
 
 func newWebhook(secret []byte, eventTracker eventtracker.EventTracker, verifySignature bool) (*Webhook, error) {
