@@ -9,13 +9,13 @@ type EventSub struct {
 }
 
 func New(options ...Option) EventSub {
-	var eventSub EventSub
+	var es EventSub
 
 	for _, option := range options {
-		option(&eventSub)
+		option(&es)
 	}
 
-	return eventSub
+	return es
 }
 
 // Webhook returns new Webhook instance with shared EventSub.

@@ -1,11 +1,12 @@
 package eventsub
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 type webhookRawNotification struct {

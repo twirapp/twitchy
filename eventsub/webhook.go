@@ -4,12 +4,12 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 var ErrInvalidWebhookSecret = errors.New("secret must be a minimum of 10 and maximum of 100 characters long")

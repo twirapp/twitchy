@@ -7,7 +7,7 @@ import (
 type Option func(*EventSub)
 
 func WithEventTracker(eventTracker eventtracker.EventTracker) Option {
-	return func(eventSub *EventSub) {
-		eventSub.eventTracker = eventTracker
+	return func(es *EventSub) {
+		es.eventTracker = eventTracker
 	}
 }

@@ -1,9 +1,10 @@
 package eventsub
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 // ErrUndefinedEventType indicates that eventsub server sent event that is not defined in library and user does not set

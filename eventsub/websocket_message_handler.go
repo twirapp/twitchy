@@ -2,8 +2,9 @@ package eventsub
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 type (

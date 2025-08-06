@@ -2,7 +2,6 @@ package eventsub
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 	"github.com/avast/retry-go/v4"
 	"github.com/coder/websocket"
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 var (

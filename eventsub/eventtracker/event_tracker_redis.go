@@ -9,7 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ErrNoRedisKeyBuilder = errors.New("redis key builder should be provided")
+var ErrNoRedisKeyBuilder = errors.New("redis key builder is not provided")
 
 // RedisKeyBuilder function builds key for redis to store event with provided event identifier.
 type RedisKeyBuilder func(eventID string) string
