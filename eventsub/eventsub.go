@@ -1,10 +1,14 @@
 package eventsub
 
+import (
+	"github.com/kvizyx/twitchy/eventsub/eventtracker"
+)
+
 // MessageID is an identifier of the event message sent from eventsub server.
 type MessageID = string
 
 type EventSub struct {
-	eventTracker EventTracker
+	eventTracker eventtracker.EventTracker
 }
 
 func New(options ...Option) EventSub {

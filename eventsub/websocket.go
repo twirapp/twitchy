@@ -11,6 +11,7 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/coder/websocket"
+	"github.com/kvizyx/twitchy/eventsub/eventtracker"
 )
 
 var (
@@ -22,7 +23,7 @@ const websocketURL = "wss://eventsub.wss.twitch.tv/ws"
 
 type Websocket struct {
 	client       *http.Client
-	eventTracker EventTracker
+	eventTracker eventtracker.EventTracker
 
 	serverURL          string
 	serverReconnectURL string
@@ -48,7 +49,7 @@ type Websocket struct {
 	callbackWebsocket
 }
 
-func newWebsocket(eventTracker EventTracker, options ...WebsocketOption) *Websocket {
+func newWebsocket(eventTracker eventtracker.EventTracker, options ...WebsocketOption) *Websocket {
 	ws := &Websocket{
 		client:             http.DefaultClient,
 		eventTracker:       eventTracker,

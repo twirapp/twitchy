@@ -8,12 +8,14 @@ import (
 	"errors"
 	"io"
 	"net/http"
+
+	"github.com/kvizyx/twitchy/eventsub/eventtracker"
 )
 
 var ErrInvalidWebhookSecret = errors.New("secret must be a minimum of 10 and maximum of 100 characters long")
 
 type Webhook struct {
-	eventTracker              EventTracker
+	eventTracker              eventtracker.EventTracker
 	secret                    []byte
 	withSignatureVerification bool
 
@@ -21,7 +23,7 @@ type Webhook struct {
 	callbackWebhook[WebhookNotificationMetadata]
 }
 
-func newWebhook(secret []byte, eventTracker EventTracker, verifySignature bool) (*Webhook, error) {
+func newWebhook(secret []byte, eventTracker eventtracker.EventTracker, verifySignature bool) (*Webhook, error) {
 	if len(secret) < 10 || len(secret) > 100 {
 		return nil, ErrInvalidWebhookSecret
 	}
