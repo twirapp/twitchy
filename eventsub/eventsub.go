@@ -2,10 +2,12 @@ package eventsub
 
 import (
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
+	"github.com/kvizyx/twitchy/internal/json"
 )
 
 type EventSub struct {
 	eventTracker eventtracker.EventTracker
+	marshal      json.MarshalFn
 }
 
 func New(options ...Option) EventSub {
@@ -13,6 +15,10 @@ func New(options ...Option) EventSub {
 
 	for _, option := range options {
 		option(&es)
+	}
+
+	if es.marshal != nil {
+		json.Marshal = es.marshal
 	}
 
 	return es
