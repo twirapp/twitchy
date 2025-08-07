@@ -14,6 +14,9 @@ import (
 
 var ErrInvalidWebhookSecret = errors.New("secret must be a minimum of 10 and maximum of 100 characters long")
 
+// Webhook is an EventSub webhook HTTP handler.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events.
 type Webhook struct {
 	eventTracker              eventtracker.EventTracker
 	secret                    []byte
@@ -70,6 +73,17 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	metadata, err := wh.extractNotificationMetadata(r.Header)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if isExpiredMessage(metadata.MessageTimestamp) {
+		http.Error(w, "message is too old", http.StatusBadRequest)
+		return
+	}
+
 	if wh.eventTracker != nil {
 		isDuplicate, err := wh.eventTracker.Track(r.Context(), messageId)
 		if err != nil {
@@ -79,12 +93,6 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if isDuplicate {
 			if wh.onDuplicate == nil {
-				return
-			}
-
-			metadata, err := wh.extractNotificationMetadata(r.Header)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 

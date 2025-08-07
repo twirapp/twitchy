@@ -19,7 +19,7 @@ func WithEventTracker(eventTracker eventtracker.EventTracker) Option {
 // WithMarshal sets JSON marshaller that will be used as default marshaller.
 //
 // Default value is a standard library marshaller.
-func WithMarshal(marshal json.MarshalFn) Option {
+func WithMarshal(marshal json.Marshaller) Option {
 	return func(es *EventSub) {
 		es.marshal = marshal
 	}

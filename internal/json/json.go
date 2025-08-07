@@ -7,13 +7,13 @@ import (
 type RawMessage = json.RawMessage
 
 type (
-	MarshalFn   func(v any) ([]byte, error)
-	UnmarshalFn func(data []byte, v any) error
+	Marshaller   func(v any) ([]byte, error)
+	UnMarshaller func(data []byte, v any) error
 )
 
 var (
-	Marshal   MarshalFn
-	Unmarshal UnmarshalFn
+	Marshal   Marshaller
+	Unmarshal UnMarshaller
 )
 
 func init() {

@@ -23,6 +23,9 @@ var (
 
 const websocketURL = "wss://eventsub.wss.twitch.tv/ws"
 
+// Websocket is an EventSub websocket client.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events.
 type Websocket struct {
 	client       *http.Client
 	eventTracker eventtracker.EventTracker
@@ -270,6 +273,10 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 			return fmt.Errorf("unmarshal message: %w", err)
 		}
 
+		if isExpiredMessage(message.Metadata.MessageTimestamp) {
+			continue
+		}
+
 		if ws.eventTracker != nil {
 			isDuplicate, err := ws.eventTracker.Track(ctx, message.Metadata.MessageId)
 			if err != nil {
@@ -278,7 +285,7 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 
 			if isDuplicate {
 				if ws.onDuplicate == nil {
-					return nil
+					continue
 				}
 
 				metadata := WebsocketNotificationMetadata{
@@ -290,7 +297,7 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 				}
 
 				go ws.onDuplicate(metadata)
-				return nil
+				continue
 			}
 		}
 
@@ -300,7 +307,7 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 	}
 }
 
-// startKeepaliveWorker starts and blocks on trying to keep the connection healthy and reconnect if needed.
+// startKeepaliveWorker starts and blocks on trying to keep connection healthy and reconnect if needed.
 func (ws *Websocket) startKeepaliveWorker(ctx context.Context) {
 	const delay = 1 * time.Second
 
@@ -312,42 +319,44 @@ func (ws *Websocket) startKeepaliveWorker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-keepalive.C:
-			lastKeepalive, _ := timestampUTCFromString(time.Now().String())
+			var (
+				now, _               = timestampUTCFromString(time.Now().String())
+				lastKeepaliveSeconds = now.Sub(ws.getLastKeepalive()).Seconds()
+			)
+
+			if lastKeepaliveSeconds < float64(ws.keepaliveSeconds) {
+				continue
+			}
 
 			// We must reconnect to the eventsub server if keepalive timeout expired.
-			if lastKeepalive.Sub(ws.getKeepalive()).Seconds() > float64(ws.keepaliveSeconds) {
-				if err := ws.reconnect(ctx, ws.serverReconnectURL); err != nil {
-					if ws.onReconnectError != nil {
-						go ws.onReconnectError(err)
-					}
+			if err := ws.reconnect(ctx, ws.serverReconnectURL); err != nil {
+				if ws.onReconnectError == nil {
+					continue
 				}
+
+				go ws.onReconnectError(err)
 			}
 		}
 	}
 }
 
-// setReconnecting sets current Websocket instance to reconnecting state meaning that client is reconnecting now.
 func (ws *Websocket) setReconnecting() bool {
 	return ws.isReconnecting.CompareAndSwap(false, true)
 }
 
-// setActive sets current Websocket instance to active state meaning that it's running.
 func (ws *Websocket) setActive() bool {
 	return ws.isActive.CompareAndSwap(false, true)
 }
 
-// setInactivate sets current Websocket instance to inactive state meaning that it's not running anymore.
 func (ws *Websocket) setInactivate() bool {
 	return ws.isActive.CompareAndSwap(true, false)
 }
 
-// setKeepalive sets last keepalive timestamp atomically.
 func (ws *Websocket) setKeepalive(timestamp TimestampUTC) {
 	ws.lastKeepalive.Store(timestamp)
 }
 
-// getKeepalive loads last keepalive timestamp atomically and returns its value.
-func (ws *Websocket) getKeepalive() time.Time {
+func (ws *Websocket) getLastKeepalive() time.Time {
 	lastKeepalive := ws.lastKeepalive.Load().(TimestampUTC)
 	return lastKeepalive.Time
 }

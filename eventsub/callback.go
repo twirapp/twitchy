@@ -4,8 +4,9 @@ type Handler[Event any, Metadata any] func(Event, Metadata)
 
 // callback is a store for EventSub callbacks.
 type callback[Metadata any] struct {
-	onDuplicate                                   func(Metadata)
-	onUndefinedEvent                              func(RawEvent, Metadata)
+	onDuplicate      func(Metadata)
+	onUndefinedEvent func(RawEvent, Metadata)
+
 	onAutomodMessageHold                          Handler[AutomodMessageHoldEvent, Metadata]
 	onAutomodMessageHoldV2                        Handler[AutomodMessageHoldEventV2, Metadata]
 	onAutomodMessageUpdate                        Handler[AutomodMessageUpdateEvent, Metadata]
