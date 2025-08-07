@@ -78,9 +78,17 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if isDuplicate {
-			if wh.onDuplicate != nil {
-				go wh.onDuplicate(messageId)
+			if wh.onDuplicate == nil {
+				return
 			}
+
+			metadata, err := wh.extractNotificationMetadata(r.Header)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			go wh.onDuplicate(metadata)
 			return
 		}
 	}

@@ -270,6 +270,30 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 			return fmt.Errorf("unmarshal message: %w", err)
 		}
 
+		if ws.eventTracker != nil {
+			isDuplicate, err := ws.eventTracker.Track(ctx, message.Metadata.MessageId)
+			if err != nil {
+				return fmt.Errorf("track event: %w", err)
+			}
+
+			if isDuplicate {
+				if ws.onDuplicate == nil {
+					return nil
+				}
+
+				metadata := WebsocketNotificationMetadata{
+					MessageId:           message.Metadata.MessageId,
+					MessageType:         message.Metadata.MessageType,
+					MessageTimestamp:    message.Metadata.MessageTimestamp,
+					SubscriptionType:    message.Metadata.SubscriptionType,
+					SubscriptionVersion: message.Metadata.SubscriptionVersion,
+				}
+
+				go ws.onDuplicate(metadata)
+				return nil
+			}
+		}
+
 		if err = ws.handleMessage(ctx, message); err != nil {
 			return fmt.Errorf("handle message: %w", err)
 		}

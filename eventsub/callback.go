@@ -4,7 +4,8 @@ type Handler[Event any, Metadata any] func(Event, Metadata)
 
 // callback is a store for EventSub callbacks.
 type callback[Metadata any] struct {
-	onDuplicate                                   func(eventID string)
+	onDuplicate                                   func(Metadata)
+	onUndefinedEvent                              func(RawEvent, Metadata)
 	onAutomodMessageHold                          Handler[AutomodMessageHoldEvent, Metadata]
 	onAutomodMessageHoldV2                        Handler[AutomodMessageHoldEventV2, Metadata]
 	onAutomodMessageUpdate                        Handler[AutomodMessageUpdateEvent, Metadata]
@@ -54,8 +55,14 @@ type callback[Metadata any] struct {
 }
 
 // OnDuplicate invokes when duplicate message is caught.
-func (c *callback[Metadata]) OnDuplicate(onDuplicate func(eventID string)) {
+func (c *callback[Metadata]) OnDuplicate(onDuplicate func(Metadata)) {
 	c.onDuplicate = onDuplicate
+}
+
+// OnUndefinedEvent invokes when event of undefined type is caught with raw event and metadata.
+// If this callback handler is set then ErrUndefinedEventType error will not be returned from callback function.
+func (c *callback[Metadata]) OnUndefinedEvent(onUndefinedEvent func(RawEvent, Metadata)) {
+	c.onUndefinedEvent = onUndefinedEvent
 }
 
 // OnAutomodMessageHold invokes when message is caught by automod for review.

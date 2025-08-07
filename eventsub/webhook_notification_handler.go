@@ -10,12 +10,12 @@ import (
 )
 
 type webhookRawNotification struct {
-	_     json.RawMessage `json:"subscription"`
-	Event json.RawMessage `json:"event"`
+	Subscription json.RawMessage `json:"subscription"`
+	Event        json.RawMessage `json:"event"`
 }
 
 func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header, body []byte) {
-	notificationMetadata, err := wh.extractNotificationMetadata(header)
+	metadata, err := wh.extractNotificationMetadata(header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -28,12 +28,12 @@ func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header,
 		return
 	}
 
-	if err = wh.callback.runEventCallback(
-		notificationMetadata.SubscriptionType,
-		notificationMetadata.SubscriptionVersion,
-		notification.Event,
-		notificationMetadata,
-	); err != nil {
+	event := RawEvent{
+		Subscription: notification.Subscription,
+		Event:        notification.Event,
+	}
+
+	if err = wh.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, event, metadata); err != nil {
 		var status int
 
 		if errors.Is(err, ErrUndefinedEventType) {

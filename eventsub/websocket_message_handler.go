@@ -22,7 +22,8 @@ type (
 	}
 
 	websocketRawMessagePayload struct {
-		Event json.RawMessage `json:"event,omitempty"`
+		Subscription json.RawMessage `json:"subscription"`
+		Event        json.RawMessage `json:"event"`
 	}
 )
 
@@ -132,37 +133,34 @@ func (ws *Websocket) handleReconnectMessage(
 }
 
 func (ws *Websocket) handleNotificationMessage(
-	ctx context.Context,
-	metadata websocketRawMessageMetadata,
-	messagePayload json.RawMessage,
+	_ context.Context,
+	rawMetadata websocketRawMessageMetadata,
+	rawPayload json.RawMessage,
 ) error {
-	if ws.eventTracker != nil {
-		isDuplicate, err := ws.eventTracker.Track(ctx, metadata.MessageId)
-		if err != nil {
-			return fmt.Errorf("track event: %w", err)
-		}
-
-		if isDuplicate {
-			if ws.onDuplicate != nil {
-				go ws.onDuplicate(metadata.MessageId)
-			}
-			return nil
-		}
-	}
-
-	nm := WebsocketNotificationMetadata{
-		MessageId:           metadata.MessageId,
-		MessageType:         metadata.MessageType,
-		MessageTimestamp:    metadata.MessageTimestamp,
-		SubscriptionType:    metadata.SubscriptionType,
-		SubscriptionVersion: metadata.SubscriptionVersion,
-	}
-
 	var payload websocketRawMessagePayload
 
-	if err := json.Unmarshal(messagePayload, &payload); err != nil {
+	if err := json.Unmarshal(rawPayload, &payload); err != nil {
 		return fmt.Errorf("unmsrshal payload: %w", err)
 	}
 
-	return ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, payload.Event, nm)
+	var (
+		event = RawEvent{
+			Subscription: payload.Subscription,
+			Event:        payload.Event,
+		}
+
+		metadata = WebsocketNotificationMetadata{
+			MessageId:           rawMetadata.MessageId,
+			MessageType:         rawMetadata.MessageType,
+			MessageTimestamp:    rawMetadata.MessageTimestamp,
+			SubscriptionType:    rawMetadata.SubscriptionType,
+			SubscriptionVersion: rawMetadata.SubscriptionVersion,
+		}
+	)
+
+	if err := ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, event, metadata); err != nil {
+		return fmt.Errorf("run event callback: %w", err)
+	}
+
+	return nil
 }
