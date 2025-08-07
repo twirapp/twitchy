@@ -62,7 +62,7 @@ func newWebsocket(eventTracker eventtracker.EventTracker, options ...WebsocketOp
 		serverURL:          websocketURL,
 		serverReconnectURL: websocketURL,
 		retryAttempts:      5,
-		retryDelay:         500 * time.Second,
+		retryDelay:         1 * time.Second,
 		keepaliveSeconds:   600,
 		reconnected:        make(chan struct{}),
 		welcome:            make(chan struct{}),
@@ -72,6 +72,8 @@ func newWebsocket(eventTracker eventtracker.EventTracker, options ...WebsocketOp
 	for _, option := range options {
 		option(ws)
 	}
+
+	ws.serverURL = fmt.Sprintf("%s?keepalive_timeout_seconds=%d", ws.serverURL, ws.keepaliveSeconds)
 
 	ws.connDialOptions = &websocket.DialOptions{
 		HTTPClient: ws.client,

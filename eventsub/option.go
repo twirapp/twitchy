@@ -5,6 +5,7 @@ import (
 	"github.com/kvizyx/twitchy/internal/json"
 )
 
+// Option is an optional setting for EventSub.
 type Option func(*EventSub)
 
 // WithEventTracker sets tracker for events to prevent duplicate events.
