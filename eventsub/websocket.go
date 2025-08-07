@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -72,8 +74,6 @@ func newWebsocket(eventTracker eventtracker.EventTracker, options ...WebsocketOp
 	for _, option := range options {
 		option(ws)
 	}
-
-	ws.serverURL = fmt.Sprintf("%s?keepalive_timeout_seconds=%d", ws.serverURL, ws.keepaliveSeconds)
 
 	ws.connDialOptions = &websocket.DialOptions{
 		HTTPClient: ws.client,
@@ -162,11 +162,11 @@ func (ws *Websocket) Disconnect() error {
 	return nil
 }
 
-func (ws *Websocket) connect(ctx context.Context, url string) error {
+func (ws *Websocket) connect(ctx context.Context, serverURL string) error {
 	if ws.retryAttempts > 0 {
 		return retry.Do(
 			func() error {
-				return ws.connectWithoutRetry(ctx, url)
+				return ws.connectWithoutRetry(ctx, serverURL)
 			},
 			retry.Attempts(ws.retryAttempts),
 			retry.Delay(ws.retryDelay),
@@ -174,17 +174,25 @@ func (ws *Websocket) connect(ctx context.Context, url string) error {
 		)
 	}
 
-	return ws.connectWithoutRetry(ctx, url)
+	return ws.connectWithoutRetry(ctx, serverURL)
 }
 
-func (ws *Websocket) connectWithoutRetry(ctx context.Context, url string) error {
-	conn, _, err := websocket.Dial(ctx, url, ws.connDialOptions)
+func (ws *Websocket) connectWithoutRetry(ctx context.Context, serverURL string) error {
+	rawURL, err := url.Parse(serverURL)
+	if err != nil {
+		return fmt.Errorf("parse server url: %w", err)
+	}
+
+	keepaliveTimeoutSeconds := strconv.FormatUint(uint64(ws.keepaliveSeconds), 10)
+
+	rawURL.Query().Add("keepalive_timeout_seconds", keepaliveTimeoutSeconds)
+
+	conn, _, err := websocket.Dial(ctx, rawURL.String(), ws.connDialOptions)
 	if err != nil {
 		return fmt.Errorf("connect to server: %w", err)
 	}
 
 	ws.conn = conn
-
 	return nil
 }
 
