@@ -5,28 +5,24 @@ import (
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
-var ErrNoRedisKeyBuilder = errors.New("redis key builder is not provided")
-
-// RedisKeyBuilder function builds key for redis to store event with provided event identifier.
+// RedisKeyBuilder builds and returns key for Redis to store event with provided event identifier.
 type RedisKeyBuilder func(eventID string) string
 
-// RedisEventTracker is a standard implementation of EventTracker for Redis, which is suitable for cases where you have
+// RedisEventTracker is a standard implementation of EventTracker for Redis, which is suitable for cases when you have
 // multiple instances of an application and need to track events in them synchronously.
 type RedisEventTracker struct {
-	client     *redis.Client
-	eventTTL   time.Duration
-	keyBuilder RedisKeyBuilder
+	client   RedisClient
+	eventTTL time.Duration
+	key      RedisKeyBuilder
 }
 
 var _ EventTracker = (*RedisEventTracker)(nil)
 
-func NewRedisEventTracker(client *redis.Client, keyBuilder RedisKeyBuilder, options ...Option) (RedisEventTracker, error) {
-	if keyBuilder == nil {
-		return RedisEventTracker{}, ErrNoRedisKeyBuilder
+func NewRedisEventTracker(client RedisClient, key RedisKeyBuilder, options ...Option) (RedisEventTracker, error) {
+	if key == nil {
+		return RedisEventTracker{}, errors.New("key builder is not provided")
 	}
 
 	opt := option{
@@ -38,18 +34,18 @@ func NewRedisEventTracker(client *redis.Client, keyBuilder RedisKeyBuilder, opti
 	}
 
 	return RedisEventTracker{
-		client:     client,
-		eventTTL:   opt.eventTTL,
-		keyBuilder: keyBuilder,
+		client:   client,
+		eventTTL: opt.eventTTL,
+		key:      key,
 	}, nil
 }
 
 func (ret RedisEventTracker) Track(ctx context.Context, eventID string) (bool, error) {
-	key := ret.keyBuilder(eventID)
+	key := ret.key(eventID)
 
-	firstTimeSeen, err := ret.client.SetNX(ctx, key, 1, ret.eventTTL).Result()
+	firstTimeSeen, err := ret.client.SetIfNotExists(ctx, key, 1, ret.eventTTL)
 	if err != nil {
-		return false, fmt.Errorf("set nx: %w", err)
+		return false, fmt.Errorf("set if not exists: %w", err)
 	}
 
 	isDuplicate := !firstTimeSeen

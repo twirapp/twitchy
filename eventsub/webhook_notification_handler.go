@@ -15,25 +15,25 @@ type webhookRawNotification struct {
 }
 
 func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header, body []byte) {
+	var rawNotification webhookRawNotification
+
+	if err := json.Unmarshal(body, &rawNotification); err != nil {
+		http.Error(w, "failed to unmarshal raw notification", http.StatusInternalServerError)
+		return
+	}
+
+	rawEvent := RawEvent{
+		Subscription: rawNotification.Subscription,
+		Event:        rawNotification.Event,
+	}
+
 	metadata, err := wh.extractNotificationMetadata(header)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var notification webhookRawNotification
-
-	if err = json.Unmarshal(body, &notification); err != nil {
-		http.Error(w, "failed to unmarshal notification", http.StatusInternalServerError)
-		return
-	}
-
-	event := RawEvent{
-		Subscription: notification.Subscription,
-		Event:        notification.Event,
-	}
-
-	if err = wh.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, event, metadata); err != nil {
+	if err = wh.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, rawEvent, metadata); err != nil {
 		var status int
 
 		if errors.Is(err, ErrUndefinedEventType) {
@@ -66,15 +66,13 @@ func (wh *Webhook) extractNotificationMetadata(header http.Header) (WebhookNotif
 		return WebhookNotificationMetadata{}, fmt.Errorf("parse message timestamp header: %w", err)
 	}
 
-	subscriptionType := header.Get("Twitch-Eventsub-Subscription-Type")
-
 	return WebhookNotificationMetadata{
 		MessageID:           header.Get("Twitch-Eventsub-Message-Id"),
 		MessageRetry:        messageRetry,
 		MessageType:         header.Get("Twitch-Eventsub-Message-Type"),
 		MessageSignature:    header.Get("Twitch-Eventsub-Message-Signature"),
 		MessageTimestamp:    messageTimestamp,
-		SubscriptionType:    EventType(subscriptionType),
+		SubscriptionType:    EventType(header.Get("Twitch-Eventsub-Subscription-Type")),
 		SubscriptionVersion: header.Get("Twitch-Eventsub-Subscription-Version"),
 	}, nil
 }

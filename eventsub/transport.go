@@ -1,6 +1,6 @@
 package eventsub
 
-// Transport is a marker for transports.
+// Transport is a marker for transport.
 type Transport interface {
 	transport()
 }

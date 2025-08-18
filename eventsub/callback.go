@@ -1,5 +1,6 @@
 package eventsub
 
+// Handler is a handler for generic EventSub event.
 type Handler[Event any, Metadata any] func(Event, Metadata)
 
 // callback is a store for EventSub callbacks.

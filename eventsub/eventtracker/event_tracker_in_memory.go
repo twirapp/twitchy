@@ -6,7 +6,7 @@ import (
 	"github.com/kvizyx/twitchy/internal/concurrentmap"
 )
 
-// InMemoryEventTracker is a standard implementation of EventTracker in-memory, safe for concurrent execution, based on
+// InMemoryEventTracker is a standard implementation of EventTracker for in-memory, safe for concurrent execution, based on
 // concurrentmap.ConcurrentMap, which is suitable for cases where it is not necessary to track events synchronously in
 // multiple instances of the application, so events can be stored in the process memory.
 type InMemoryEventTracker struct {
