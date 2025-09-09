@@ -1,7 +1,5 @@
 # Twitchy
 
----
-
 Twitchy is a comprehensive Twitch client library that provides an easy way to communicate with all major Twitch APIs in
 Go applications.
 
