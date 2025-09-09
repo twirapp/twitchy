@@ -13,7 +13,7 @@ type option struct {
 
 // WithEventTTL sets TTL for events to be tracked. Usually, you don't want to you use this option.
 //
-// Default value is EventTTL.
+// Default value is SafeEventTTL.
 func WithEventTTL(ttl time.Duration) Option {
 	return func(o *option) {
 		o.eventTTL = ttl

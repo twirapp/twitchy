@@ -21,51 +21,71 @@ type (
 		SubscriptionVersion string       `json:"subscription_version"`
 	}
 
-	websocketRawMessagePayload struct {
+	// websocketRawEvent is a websocket duplicate for RawEvent to close internal JSON wrapper from user.
+	websocketRawEvent struct {
 		Subscription json.RawMessage `json:"subscription"`
 		Event        json.RawMessage `json:"event"`
 	}
 )
 
+// handleMessage handles raw websocket message.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events.
 func (ws *Websocket) handleMessage(ctx context.Context, message websocketRawMessage) error {
-	metadata := message.Metadata
+	var (
+		payload  = message.Payload
+		metadata = message.Metadata
+	)
 
 	switch metadata.MessageType {
 	case "session_welcome":
-		if err := ws.handleWelcomeMessage(metadata, message.Payload); err != nil {
+		if err := ws.handleWelcomeMessage(metadata, payload); err != nil {
 			return fmt.Errorf("handle welcome message: %w", err)
 		}
 	case "session_keepalive":
 		ws.handleKeepaliveMessage(metadata)
 	case "session_reconnect":
-		if err := ws.handleReconnectMessage(ctx, metadata, message.Payload); err != nil {
+		if err := ws.handleReconnectMessage(ctx, metadata, payload); err != nil {
 			return fmt.Errorf("handle reconnect message: %w", err)
 		}
 	case "notification":
-		if err := ws.handleNotificationMessage(ctx, metadata, message.Payload); err != nil {
+		if err := ws.handleNotificationMessage(metadata, payload); err != nil {
 			return fmt.Errorf("handle notification message: %w", err)
 		}
 	case "revocation":
-		// TODO: implement me
+		if err := ws.handleRevocationMessage(metadata, payload); err != nil {
+			return fmt.Errorf("handle revocation message: %w", err)
+		}
 	}
 
 	return nil
 }
 
-func (ws *Websocket) handleWelcomeMessage(metadata websocketRawMessageMetadata, messagePayload json.RawMessage) error {
-	var payload WebsocketWelcomePayload
+// handleRevocationMessage handles revocation message that is sent if Twitch revokes an event subscription.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#revocation-message.
+func (ws *Websocket) handleRevocationMessage(rawMetadata websocketRawMessageMetadata, rawPayload json.RawMessage) error {
+	// TODO: implement me
+	return nil
+}
 
-	if err := json.Unmarshal(messagePayload, &payload); err != nil {
-		return fmt.Errorf("unmsrshal payload: %w", err)
+// handleWelcomeMessage handles welcome message that is sent when you connect to the server.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#welcome-message.
+func (ws *Websocket) handleWelcomeMessage(rawMetadata websocketRawMessageMetadata, rawPayload json.RawMessage) error {
+	var welcomePayload WebsocketWelcomePayload
+
+	if err := json.Unmarshal(rawPayload, &welcomePayload); err != nil {
+		return fmt.Errorf("unmarshal raw payload: %w", err)
 	}
 
-	welcome := WebsocketWelcomeMessage{
+	welcomeMessage := WebsocketWelcomeMessage{
 		Metadata: WebsocketWelcomeMetadata{
-			MessageId:        metadata.MessageId,
-			MessageType:      metadata.MessageType,
-			MessageTimestamp: metadata.MessageTimestamp,
+			MessageId:        rawMetadata.MessageId,
+			MessageType:      rawMetadata.MessageType,
+			MessageTimestamp: rawMetadata.MessageTimestamp,
 		},
-		Payload: payload,
+		Payload: welcomePayload,
 	}
 
 	select {
@@ -74,91 +94,97 @@ func (ws *Websocket) handleWelcomeMessage(metadata websocketRawMessageMetadata, 
 	}
 
 	if ws.onWelcome != nil {
-		go ws.onWelcome(welcome)
+		go ws.onWelcome(welcomeMessage)
 	}
 
 	return nil
 }
 
-func (ws *Websocket) handleKeepaliveMessage(metadata websocketRawMessageMetadata) {
-	keepalive := WebsocketKeepaliveMessage{
+// handleKeepaliveMessage handles keepalive message that indicate that the websocket connection is healthy.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#keepalive-message.
+func (ws *Websocket) handleKeepaliveMessage(rawMetadata websocketRawMessageMetadata) {
+	keepaliveMessage := WebsocketKeepaliveMessage{
 		Metadata: WebsocketKeepaliveMetadata{
-			MessageId:        metadata.MessageId,
-			MessageType:      metadata.MessageType,
-			MessageTimestamp: metadata.MessageTimestamp,
+			MessageId:        rawMetadata.MessageId,
+			MessageType:      rawMetadata.MessageType,
+			MessageTimestamp: rawMetadata.MessageTimestamp,
 		},
 		Payload: struct{}{},
 	}
 
-	ws.setKeepalive(keepalive.Metadata.MessageTimestamp)
+	ws.setKeepalive(keepaliveMessage.Metadata.MessageTimestamp)
 
 	if ws.onKeepalive != nil {
-		go ws.onKeepalive(keepalive)
+		go ws.onKeepalive(keepaliveMessage)
 	}
 }
 
+// handleReconnectMessage handles reconnect message that is sent if the edge server that you are connected to needs to be swapped.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#reconnect-message.
 func (ws *Websocket) handleReconnectMessage(
 	ctx context.Context,
-	metadata websocketRawMessageMetadata,
-	messagePayload json.RawMessage,
+	rawMetadata websocketRawMessageMetadata,
+	rawPayload json.RawMessage,
 ) error {
-	var payload WebsocketReconnectPayload
+	var reconnectPayload WebsocketReconnectPayload
 
-	if err := json.Unmarshal(messagePayload, &payload); err != nil {
-		return fmt.Errorf("unmsrshal payload: %w", err)
+	if err := json.Unmarshal(rawPayload, &reconnectPayload); err != nil {
+		return fmt.Errorf("unmarshal raw payload: %w", err)
 	}
 
-	reconnect := WebsocketReconnectMessage{
+	reconnectMessage := WebsocketReconnectMessage{
 		Metadata: WebsocketReconnectMetadata{
-			MessageId:        metadata.MessageId,
-			MessageType:      metadata.MessageType,
-			MessageTimestamp: metadata.MessageTimestamp,
+			MessageId:        rawMetadata.MessageId,
+			MessageType:      rawMetadata.MessageType,
+			MessageTimestamp: rawMetadata.MessageTimestamp,
 		},
-		Payload: payload,
+		Payload: reconnectPayload,
 	}
 
 	go func() {
-		if err := ws.reconnect(ctx, reconnect.Payload.Session.ReconnectURL); err != nil {
-			if ws.onReconnectError != nil {
-				go ws.onReconnectError(err)
-			}
+		err := ws.reconnect(ctx, reconnectMessage.Payload.Session.ReconnectURL)
+		if err == nil {
+			return
+		}
+
+		if ws.onReconnectError != nil {
+			go ws.onReconnectError(err)
 		}
 	}()
 
 	if ws.onReconnect != nil {
-		go ws.onReconnect(reconnect)
+		go ws.onReconnect(reconnectMessage)
 	}
 
 	return nil
 }
 
-func (ws *Websocket) handleNotificationMessage(
-	_ context.Context,
-	rawMetadata websocketRawMessageMetadata,
-	rawPayload json.RawMessage,
-) error {
-	var payload websocketRawMessagePayload
+// handleNotificationMessage handles notification message that is sent when an event occurs.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events/#notification-message.
+func (ws *Websocket) handleNotificationMessage(rawMetadata websocketRawMessageMetadata, rawPayload json.RawMessage) error {
+	var wsRawEvent websocketRawEvent
 
-	if err := json.Unmarshal(rawPayload, &payload); err != nil {
-		return fmt.Errorf("unmsrshal payload: %w", err)
+	if err := json.Unmarshal(rawPayload, &wsRawEvent); err != nil {
+		return fmt.Errorf("unmarshal raw payload: %w", err)
 	}
 
-	var (
-		event = RawEvent{
-			Subscription: payload.Subscription,
-			Event:        payload.Event,
-		}
+	metadata := WebsocketNotificationMetadata{
+		MessageId:           rawMetadata.MessageId,
+		MessageType:         rawMetadata.MessageType,
+		MessageTimestamp:    rawMetadata.MessageTimestamp,
+		SubscriptionType:    rawMetadata.SubscriptionType,
+		SubscriptionVersion: rawMetadata.SubscriptionVersion,
+	}
 
-		metadata = WebsocketNotificationMetadata{
-			MessageId:           rawMetadata.MessageId,
-			MessageType:         rawMetadata.MessageType,
-			MessageTimestamp:    rawMetadata.MessageTimestamp,
-			SubscriptionType:    rawMetadata.SubscriptionType,
-			SubscriptionVersion: rawMetadata.SubscriptionVersion,
-		}
-	)
+	rawEvent := RawEvent{
+		Subscription: wsRawEvent.Subscription,
+		Event:        wsRawEvent.Event,
+	}
 
-	if err := ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, event, metadata); err != nil {
+	if err := ws.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, rawEvent, metadata); err != nil {
 		return fmt.Errorf("run event callback: %w", err)
 	}
 

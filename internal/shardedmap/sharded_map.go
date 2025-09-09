@@ -1,4 +1,4 @@
-package concurrentmap
+package shardedmap
 
 import (
 	"context"
@@ -11,7 +11,7 @@ const shardCount = 32
 
 type Hasher[K comparable] func(K) uint64
 
-type ConcurrentMap[K comparable, V any] struct {
+type ShardedMap[K comparable, V any] struct {
 	shards   [shardCount]*shard[K, V]
 	hasher   Hasher[K]
 	entryTTL time.Duration
@@ -55,19 +55,19 @@ func newShard[K comparable, V any]() *shard[K, V] {
 	}
 }
 
-func newConcurrentMap[K comparable, V any](ctx context.Context, hasher Hasher[K], entryTTL time.Duration) ConcurrentMap[K, V] {
+func newShardedMap[K comparable, V any](ctx context.Context, hasher Hasher[K], entryTTL time.Duration) ShardedMap[K, V] {
 	var shards [shardCount]*shard[K, V]
 
-	for index := range shardCount {
+	for i := range shardCount {
 		sh := newShard[K, V]()
-		shards[index] = sh
+		shards[i] = sh
 
 		if entryTTL > 0 {
 			go sh.startTTLEviction(ctx, entryTTL)
 		}
 	}
 
-	return ConcurrentMap[K, V]{
+	return ShardedMap[K, V]{
 		shards:   shards,
 		hasher:   hasher,
 		entryTTL: entryTTL,
@@ -82,18 +82,18 @@ func newStringHasher() Hasher[string] {
 	}
 }
 
-func NewString[V any](ctx context.Context, entryTTL time.Duration) ConcurrentMap[string, V] {
-	return newConcurrentMap[string, V](ctx, newStringHasher(), entryTTL)
+func NewString[V any](ctx context.Context, entryTTL time.Duration) ShardedMap[string, V] {
+	return newShardedMap[string, V](ctx, newStringHasher(), entryTTL)
 }
 
-func (cm *ConcurrentMap[K, V]) GetOrSet(key K, value V) (V, bool) {
-	shardEntry := cm.getShard(key)
+func (sm *ShardedMap[K, V]) GetOrSet(key K, value V) (V, bool) {
+	shardEntry := sm.getShard(key)
 
 	shardEntry.Lock()
 	defer shardEntry.Unlock()
 
 	if storedValue, exists := shardEntry.entries[key]; exists {
-		if time.Since(storedValue.timestamp) >= cm.entryTTL {
+		if time.Since(storedValue.timestamp) >= sm.entryTTL {
 			delete(shardEntry.entries, key)
 		}
 
@@ -108,7 +108,7 @@ func (cm *ConcurrentMap[K, V]) GetOrSet(key K, value V) (V, bool) {
 	return value, false
 }
 
-func (cm *ConcurrentMap[K, V]) getShard(key K) *shard[K, V] {
-	hash := cm.hasher(key)
-	return cm.shards[hash%shardCount]
+func (sm *ShardedMap[K, V]) getShard(key K) *shard[K, V] {
+	hash := sm.hasher(key)
+	return sm.shards[hash%shardCount]
 }

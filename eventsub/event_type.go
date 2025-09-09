@@ -1,6 +1,8 @@
 package eventsub
 
 // EventType is a type of EventSub event.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
 type EventType string
 
 const (

@@ -24,8 +24,6 @@ var (
 const websocketURL = "wss://eventsub.wss.twitch.tv/ws"
 
 // Websocket is an EventSub websocket client.
-//
-// Reference: https://dev.twitch.tv/docs/eventsub/handling-websocket-events.
 type Websocket struct {
 	client       *http.Client
 	eventTracker eventtracker.EventTracker
@@ -188,7 +186,10 @@ func (ws *Websocket) connectWithoutRetry(ctx context.Context, serverURL string) 
 
 	keepaliveTimeoutSeconds := strconv.FormatUint(uint64(ws.keepaliveSeconds), 10)
 
-	rawURL.Query().Add("keepalive_timeout_seconds", keepaliveTimeoutSeconds)
+	query := rawURL.Query()
+	query.Add("keepalive_timeout_seconds", keepaliveTimeoutSeconds)
+
+	rawURL.RawQuery = query.Encode()
 
 	conn, _, err := websocket.Dial(ctx, rawURL.String(), ws.connDialOptions)
 	if err != nil {
@@ -216,21 +217,16 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 		}
 	}()
 
-	// Save old connection to close it later after connecting to the new edge server.
+	// Save old connection to close it later after connecting to the new edge server and set new reconnection URL.
 	oldConnection := ws.conn
-
-	// Set new server reconnect URL.
 	ws.serverReconnectURL = reconnectURL
 
-	// Connect to the new eventsub edge server.
 	if err := ws.connect(ctx, reconnectURL); err != nil {
 		return fmt.Errorf("connect: %w", err)
 	}
 
-	// Signal to read worker to stop reading from old connection and restart with new one.
+	// Signal read worker to stop reading from old connection, restart with new one and wait for welcome message.
 	ws.restart <- struct{}{}
-
-	// Wait for a welcome message on new connection.
 	<-ws.welcome
 
 	// Close old connection to complete reconnect flow.
@@ -244,9 +240,7 @@ func (ws *Websocket) reconnect(ctx context.Context, reconnectURL string) error {
 // startReadWorker starts and blocks on reading and processing messages from the connection.
 func (ws *Websocket) startReadWorker(ctx context.Context) error {
 	for {
-		var message websocketRawMessage
-
-		_, payload, err := ws.conn.Read(ctx)
+		_, data, err := ws.conn.Read(ctx)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
 				return nil
@@ -269,36 +263,34 @@ func (ws *Websocket) startReadWorker(ctx context.Context) error {
 			return fmt.Errorf("read from connection: %w", err)
 		}
 
-		if err = json.Unmarshal(payload, &message); err != nil {
-			return fmt.Errorf("unmarshal message: %w", err)
+		var message websocketRawMessage
+
+		if err = json.Unmarshal(data, &message); err != nil {
+			return fmt.Errorf("unmarshal data from connection: %w", err)
 		}
 
-		if isExpiredMessage(message.Metadata.MessageTimestamp) {
+		metadata := WebsocketNotificationMetadata{
+			MessageId:           message.Metadata.MessageId,
+			MessageType:         message.Metadata.MessageType,
+			MessageTimestamp:    message.Metadata.MessageTimestamp,
+			SubscriptionType:    message.Metadata.SubscriptionType,
+			SubscriptionVersion: message.Metadata.SubscriptionVersion,
+		}
+
+		err, safe := isSafeMessage(
+			ctx,
+			ws.onDuplicate,
+			ws.eventTracker,
+			metadata,
+			metadata.MessageId,
+			metadata.MessageTimestamp,
+		)
+		if err != nil {
+			return fmt.Errorf("is safe message: %w", err)
+		}
+
+		if !safe {
 			continue
-		}
-
-		if ws.eventTracker != nil {
-			isDuplicate, err := ws.eventTracker.Track(ctx, message.Metadata.MessageId)
-			if err != nil {
-				return fmt.Errorf("track event: %w", err)
-			}
-
-			if isDuplicate {
-				if ws.onDuplicate == nil {
-					continue
-				}
-
-				metadata := WebsocketNotificationMetadata{
-					MessageId:           message.Metadata.MessageId,
-					MessageType:         message.Metadata.MessageType,
-					MessageTimestamp:    message.Metadata.MessageTimestamp,
-					SubscriptionType:    message.Metadata.SubscriptionType,
-					SubscriptionVersion: message.Metadata.SubscriptionVersion,
-				}
-
-				go ws.onDuplicate(metadata)
-				continue
-			}
 		}
 
 		if err = ws.handleMessage(ctx, message); err != nil {

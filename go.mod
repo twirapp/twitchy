@@ -4,8 +4,8 @@ go 1.24
 
 require (
 	github.com/avast/retry-go/v4 v4.6.1
-	github.com/coder/websocket v1.8.13
-	github.com/redis/go-redis/v9 v9.12.0
+	github.com/coder/websocket v1.8.14
+	github.com/redis/go-redis/v9 v9.13.0
 )
 
 require (

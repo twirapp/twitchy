@@ -1,18 +1,20 @@
 package eventsub
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
 	"github.com/kvizyx/twitchy/internal/json"
 )
 
-// EventSub is a module that is responsible for Twitch's eventsub.
+// EventSub is a Twitch eventsub module.
 //
 // Reference: https://dev.twitch.tv/docs/eventsub.
 type EventSub struct {
 	eventTracker eventtracker.EventTracker
-	marshal      json.Marshaller
+	unmarshal    json.UnMarshaller
 }
 
 func New(options ...Option) EventSub {
@@ -22,24 +24,24 @@ func New(options ...Option) EventSub {
 		option(&es)
 	}
 
-	if es.marshal != nil {
-		json.Marshal = es.marshal
+	if es.unmarshal != nil {
+		json.Unmarshal = es.unmarshal
 	}
 
 	return es
 }
 
-// Webhook returns new Webhook HTTP handler that implements http.Handler.
+// Webhook returns new eventsub Webhook handler that implements http.Handler.
 func (es *EventSub) Webhook(secret []byte, verifySignature bool) (*Webhook, error) {
 	return newWebhook(secret, es.eventTracker, verifySignature)
 }
 
-// Websocket returns new Websocket client.
+// Websocket returns new eventsub Websocket client.
 func (es *EventSub) Websocket(options ...WebsocketOption) *Websocket {
 	return newWebsocket(es.eventTracker, options...)
 }
 
-// isExpiredMessage returns does message with provided timestamp is too old (expired) to process or not.
+// isExpiredMessage returns does eventsub message with provided timestamp is too old (expired) to process or not.
 //
 // According to the Twitch's documentation we should not process messages that are older than 10 minutes from the moment
 // they were create to guard against replay attacks.
@@ -48,9 +50,37 @@ func isExpiredMessage(messageTimestamp TimestampUTC) bool {
 
 	now, _ := timestampUTCFromString(time.Now().String())
 
-	if now.Sub(messageTimestamp.Time).Seconds() > expirationSeconds {
-		return true
+	return now.Sub(messageTimestamp.Time).Seconds() > expirationSeconds
+}
+
+// isSafeMessage validates eventsub message with it's metadata to ensure that it's not expired and not
+// processed yet so it's safe to process it now.
+func isSafeMessage[Metadata any](
+	ctx context.Context,
+	onDuplicate func(Metadata),
+	eventTracker eventtracker.EventTracker,
+	metadata Metadata,
+	messageID string,
+	messageTimestamp TimestampUTC,
+) (error, bool) {
+	if isExpiredMessage(messageTimestamp) {
+		return nil, false
 	}
 
-	return false
+	if eventTracker != nil {
+		isDuplicate, err := eventTracker.Track(ctx, messageID)
+		if err != nil {
+			return fmt.Errorf("track: %w", err), false
+		}
+
+		if isDuplicate {
+			if onDuplicate != nil {
+				go onDuplicate(metadata)
+			}
+
+			return nil, false
+		}
+	}
+
+	return nil, true
 }

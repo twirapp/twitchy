@@ -5,18 +5,21 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"unicode"
 
 	"github.com/kvizyx/twitchy/eventsub/eventtracker"
-	"github.com/kvizyx/twitchy/internal/json"
 )
 
-var ErrInvalidWebhookSecret = errors.New("secret must be a minimum of 10 and maximum of 100 characters long")
+// ErrInvalidWebhookSecret indicates that your webhook secret doesn't match with Twitch's webhook secret requirements.
+//
+// See note section: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#verifying-the-event-message.
+var ErrInvalidWebhookSecret = errors.New("webhook secret is not valid")
 
 // Webhook is an EventSub webhook HTTP handler.
-//
-// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events.
 type Webhook struct {
 	eventTracker              eventtracker.EventTracker
 	secret                    []byte
@@ -28,8 +31,10 @@ type Webhook struct {
 	callback[WebhookNotificationMetadata]
 }
 
+var _ http.Handler = (*Webhook)(nil)
+
 func newWebhook(secret []byte, eventTracker eventtracker.EventTracker, verifySignature bool) (*Webhook, error) {
-	if len(secret) < 10 || len(secret) > 100 {
+	if !isValidWebhookSecret(secret) {
 		return nil, ErrInvalidWebhookSecret
 	}
 
@@ -47,98 +52,60 @@ func (wh *Webhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "cannot read body", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer func() {
 		_ = r.Body.Close()
 	}()
 
-	messageId := r.Header.Get("Twitch-Eventsub-Message-Id")
+	metadata, err := getWebhookNotificationMetadata(r.Header)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	if wh.withSignatureVerification {
-		var (
-			messageSignature = r.Header.Get("Twitch-Eventsub-Message-Signature")
-			messageTimestamp = r.Header.Get("Twitch-Eventsub-Message-Timestamp")
-		)
-
-		if len(messageSignature) == 0 {
+		if len(metadata.MessageSignature) == 0 {
 			http.Error(w, "missing signature header", http.StatusBadRequest)
 			return
 		}
 
-		if !wh.isValidSignature(messageSignature, body, messageId, messageTimestamp) {
+		if !wh.isValidSignature(metadata.MessageSignature, body, metadata.MessageId, metadata.MessageTimestamp) {
 			http.Error(w, "invalid signature", http.StatusBadRequest)
 			return
 		}
 	}
 
-	metadata, err := wh.extractNotificationMetadata(r.Header)
+	err, safe := isSafeMessage(
+		r.Context(),
+		wh.onDuplicate,
+		wh.eventTracker,
+		metadata,
+		metadata.MessageId,
+		metadata.MessageTimestamp,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if isExpiredMessage(metadata.MessageTimestamp) {
-		http.Error(w, "message is too old", http.StatusBadRequest)
+	if !safe {
+		http.Error(w, "message is not safe to process", http.StatusBadRequest)
 		return
 	}
 
-	if wh.eventTracker != nil {
-		isDuplicate, err := wh.eventTracker.Track(r.Context(), messageId)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if isDuplicate {
-			if wh.onDuplicate == nil {
-				return
-			}
-
-			go wh.onDuplicate(metadata)
-			return
-		}
-	}
-
-	messageType := r.Header.Get("Twitch-Eventsub-Message-Type")
-
-	switch messageType {
-	case "notification":
-		wh.handleNotification(w, r.Header, body)
-	case "webhook_callback_verification":
-		wh.handleCallbackVerification(w, body)
-	case "revocation":
-		wh.handleRevocation(w, body)
-	default:
-		http.Error(w, "undefined message type", http.StatusBadRequest)
-		return
-	}
+	wh.handleNotification(w, metadata, body)
 }
 
-func (wh *Webhook) handleRevocation(w http.ResponseWriter, body []byte) {
-	if _, ok := runWebhookHandler(wh.onRevocation, w, body); !ok {
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (wh *Webhook) handleCallbackVerification(w http.ResponseWriter, body []byte) {
-	notification, ok := runWebhookHandler(wh.onVerification, w, body)
-	if !ok {
-		return
-	}
-
-	w.Header().Set("Content-Type", "text/plain")
-	_, _ = w.Write([]byte(notification.Challenge))
-}
-
-func (wh *Webhook) isValidSignature(signature string, body []byte, messageId, messageTimestamp string) bool {
+// isValidSignature validates that provided request signature is valid based on the request body, message id and timestamp.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#verifying-the-event-message.
+func (wh *Webhook) isValidSignature(signature string, body []byte, messageId string, messageTimestamp TimestampUTC) bool {
 	mac := hmac.New(sha256.New, wh.secret)
 
 	mac.Write([]byte(messageId))
-	mac.Write([]byte(messageTimestamp))
+	mac.Write([]byte(messageTimestamp.String()))
 	mac.Write(body)
 
 	computedSignature := "sha256=" + hex.EncodeToString(mac.Sum(nil))
@@ -146,19 +113,48 @@ func (wh *Webhook) isValidSignature(signature string, body []byte, messageId, me
 	return hmac.Equal([]byte(computedSignature), []byte(signature))
 }
 
-// runWebhookHandler parses payload from JSON body and runs callback in a separate go-routine with parsed payload if it's
-// not nil and returns payload itself. Returns true on success.
-func runWebhookHandler[Payload any](callback func(Payload), w http.ResponseWriter, body []byte) (Payload, bool) {
-	var payload Payload
-
-	if callback != nil {
-		if err := json.Unmarshal(body, &payload); err != nil {
-			http.Error(w, "failed to unmarshal payload", http.StatusInternalServerError)
-			return payload, false
-		}
-
-		go callback(payload)
+// isValidWebhookSecret validates that secret meets Twitch's webhook secret requirements.
+func isValidWebhookSecret(secret []byte) bool {
+	if len(secret) < 10 || len(secret) > 100 {
+		return false
 	}
 
-	return payload, true
+	// Check that secret contains only ASCII characters.
+	for i := range len(secret) {
+		if secret[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+
+	return true
+}
+
+// getWebhookNotificationMetadata extracts Twitch-specific headers from webhook request and compose them as WebhookNotificationMetadata.
+func getWebhookNotificationMetadata(header http.Header) (WebhookNotificationMetadata, error) {
+	var (
+		rawMessageRetry     = header.Get("Twitch-Eventsub-Message-Retry")
+		rawMessageTimestamp = header.Get("Twitch-Eventsub-Message-Timestamp")
+	)
+
+	messageRetry, err := strconv.Atoi(rawMessageRetry)
+	if err != nil {
+		return WebhookNotificationMetadata{}, fmt.Errorf("parse retry header: %w", err)
+	}
+
+	messageTimestamp, err := timestampUTCFromString(rawMessageTimestamp)
+	if err != nil {
+		return WebhookNotificationMetadata{}, fmt.Errorf("parse message timestamp header: %w", err)
+	}
+
+	subscriptionType := header.Get("Twitch-Eventsub-Subscription-Type")
+
+	return WebhookNotificationMetadata{
+		MessageId:           header.Get("Twitch-Eventsub-Message-Id"),
+		MessageRetry:        messageRetry,
+		MessageType:         header.Get("Twitch-Eventsub-Message-Type"),
+		MessageSignature:    header.Get("Twitch-Eventsub-Message-Signature"),
+		MessageTimestamp:    messageTimestamp,
+		SubscriptionType:    EventType(subscriptionType),
+		SubscriptionVersion: header.Get("Twitch-Eventsub-Subscription-Version"),
+	}, nil
 }

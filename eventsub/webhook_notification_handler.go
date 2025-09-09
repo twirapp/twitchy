@@ -2,20 +2,38 @@ package eventsub
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/kvizyx/twitchy/internal/json"
 )
 
-type webhookRawNotification struct {
+// webhookRawEvent is a webhook duplicate for RawEvent to close internal JSON wrapper from user.
+type webhookRawEvent struct {
 	Subscription json.RawMessage `json:"subscription"`
 	Event        json.RawMessage `json:"event"`
 }
 
-func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header, body []byte) {
-	var rawNotification webhookRawNotification
+// handleNotification handles webhook notification sent by eventsub server.
+func (wh *Webhook) handleNotification(w http.ResponseWriter, metadata WebhookNotificationMetadata, body []byte) {
+	messageType := metadata.MessageType
+
+	switch messageType {
+	case "notification":
+		wh.handleEventNotification(w, metadata, body)
+	case "webhook_callback_verification":
+		wh.handleCallbackVerificationNotification(w, body)
+	case "revocation":
+		wh.handleRevocationNotification(w, body)
+	default:
+		http.Error(w, "undefined message type", http.StatusBadRequest)
+	}
+}
+
+// handleEventNotification handles event notification request.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#processing-an-event.
+func (wh *Webhook) handleEventNotification(w http.ResponseWriter, metadata WebhookNotificationMetadata, body []byte) {
+	var rawNotification webhookRawEvent
 
 	if err := json.Unmarshal(body, &rawNotification); err != nil {
 		http.Error(w, "failed to unmarshal raw notification", http.StatusInternalServerError)
@@ -27,13 +45,7 @@ func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header,
 		Event:        rawNotification.Event,
 	}
 
-	metadata, err := wh.extractNotificationMetadata(header)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err = wh.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, rawEvent, metadata); err != nil {
+	if err := wh.callback.runEventCallback(metadata.SubscriptionType, metadata.SubscriptionVersion, rawEvent, metadata); err != nil {
 		var status int
 
 		if errors.Is(err, ErrUndefinedEventType) {
@@ -49,30 +61,47 @@ func (wh *Webhook) handleNotification(w http.ResponseWriter, header http.Header,
 	w.WriteHeader(http.StatusOK)
 }
 
-// extractNotificationMetadata extracts Twitch's webhook request headers and returns them as WebhookNotificationMetadata.
-func (wh *Webhook) extractNotificationMetadata(header http.Header) (WebhookNotificationMetadata, error) {
-	var (
-		rawMessageRetry     = header.Get("Twitch-Eventsub-Message-Retry")
-		rawMessageTimestamp = header.Get("Twitch-Eventsub-Message-Timestamp")
-	)
-
-	messageRetry, err := strconv.Atoi(rawMessageRetry)
-	if err != nil {
-		return WebhookNotificationMetadata{}, fmt.Errorf("parse retry header: %w", err)
+// handleRevocation handles event subscription revoke notification request.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#revoking-your-subscription.
+func (wh *Webhook) handleRevocationNotification(w http.ResponseWriter, body []byte) {
+	if _, ok := runEventWebhookHandler(wh.onRevocation, w, body); !ok {
+		return
 	}
 
-	messageTimestamp, err := timestampUTCFromString(rawMessageTimestamp)
-	if err != nil {
-		return WebhookNotificationMetadata{}, fmt.Errorf("parse message timestamp header: %w", err)
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleCallbackVerification handles webhook challenge verification notification request.
+//
+// Reference: https://dev.twitch.tv/docs/eventsub/handling-webhook-events/#responding-to-a-challenge-request.
+func (wh *Webhook) handleCallbackVerificationNotification(w http.ResponseWriter, body []byte) {
+	notification, ok := runEventWebhookHandler(wh.onVerification, w, body)
+	if !ok {
+		return
 	}
 
-	return WebhookNotificationMetadata{
-		MessageID:           header.Get("Twitch-Eventsub-Message-Id"),
-		MessageRetry:        messageRetry,
-		MessageType:         header.Get("Twitch-Eventsub-Message-Type"),
-		MessageSignature:    header.Get("Twitch-Eventsub-Message-Signature"),
-		MessageTimestamp:    messageTimestamp,
-		SubscriptionType:    EventType(header.Get("Twitch-Eventsub-Subscription-Type")),
-		SubscriptionVersion: header.Get("Twitch-Eventsub-Subscription-Version"),
-	}, nil
+	w.Header().Set("Content-Type", "text/plain")
+	_, _ = w.Write([]byte(notification.Challenge))
+}
+
+// runEventWebhookHandler parses provided request body payload as JSON data to generic payload and runs handler in separate go-routine
+// with this payload if handler is defined and returns parsed payload with false, otherwise returns empty payload with true.
+func runEventWebhookHandler[Payload any](
+	handler func(Payload),
+	w http.ResponseWriter,
+	bodyPayload []byte,
+) (Payload, bool) {
+	var payload Payload
+
+	if handler != nil {
+		if err := json.Unmarshal(bodyPayload, &payload); err != nil {
+			http.Error(w, "failed to unmarshal body payload", http.StatusInternalServerError)
+			return payload, false
+		}
+
+		go handler(payload)
+	}
+
+	return payload, true
 }

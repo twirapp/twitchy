@@ -3,21 +3,21 @@ package eventtracker
 import (
 	"context"
 
-	"github.com/kvizyx/twitchy/internal/concurrentmap"
+	"github.com/kvizyx/twitchy/internal/shardedmap"
 )
 
-// InMemoryEventTracker is a standard implementation of EventTracker for in-memory, safe for concurrent execution, based on
-// concurrentmap.ConcurrentMap, which is suitable for cases where it is not necessary to track events synchronously in
-// multiple instances of the application, so events can be stored in the process memory.
+// InMemoryEventTracker is a standard in-memory concurrent safe implementation of EventTracker based on
+// shardedmap.ShardedMap, which is suitable for cases where it is not necessary to track events synchronously in
+// multiple instances of your application, so events can be stored in the process memory.
 type InMemoryEventTracker struct {
-	events concurrentmap.ConcurrentMap[string, struct{}]
+	events shardedmap.ShardedMap[string, struct{}]
 }
 
 var _ EventTracker = (*InMemoryEventTracker)(nil)
 
 func NewInMemoryEventTracker(ctx context.Context, options ...Option) *InMemoryEventTracker {
 	opt := option{
-		eventTTL: EventTTL,
+		eventTTL: SafeEventTTL,
 	}
 
 	for _, userOpt := range options {
@@ -25,7 +25,7 @@ func NewInMemoryEventTracker(ctx context.Context, options ...Option) *InMemoryEv
 	}
 
 	return &InMemoryEventTracker{
-		events: concurrentmap.NewString[struct{}](ctx, opt.eventTTL),
+		events: shardedmap.NewString[struct{}](ctx, opt.eventTTL),
 	}
 }
 

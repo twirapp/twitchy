@@ -1,9 +1,9 @@
 package eventsub
 
-// Handler is a handler for generic EventSub event.
+// Handler is a handler for generic event.
 type Handler[Event any, Metadata any] func(Event, Metadata)
 
-// callback is a store for EventSub callbacks.
+// callback is a store for user's EventSub callbacks.
 type callback[Metadata any] struct {
 	onDuplicate      func(Metadata)
 	onUndefinedEvent func(RawEvent, Metadata)
@@ -56,13 +56,14 @@ type callback[Metadata any] struct {
 	onUserAuthorizationRevoke                     Handler[UserAuthorizationRevokeEvent, Metadata]
 }
 
-// OnDuplicate invokes when duplicate message is caught.
+// OnDuplicate invokes when duplicate message is caught (this is not necessarily an event).
 func (c *callback[Metadata]) OnDuplicate(onDuplicate func(Metadata)) {
 	c.onDuplicate = onDuplicate
 }
 
-// OnUndefinedEvent invokes when event of undefined type is caught with raw event and metadata.
-// If this callback handler is set then ErrUndefinedEventType error will not be returned from callback function.
+// OnUndefinedEvent invokes when event with type that is not defined in library is caught.
+//
+// If this callback handler is set then ErrUndefinedEventType error will not be returned from event callback runner.
 func (c *callback[Metadata]) OnUndefinedEvent(onUndefinedEvent func(RawEvent, Metadata)) {
 	c.onUndefinedEvent = onUndefinedEvent
 }
@@ -388,7 +389,7 @@ func (c *callback[Metadata]) OnChannelChatMessageDelete(onChannelChatMessageDele
 
 // OnUserAuthorizationRevoke invokes when a user revokes authorization for an application.
 //
-// NOTE: This subscription type is only supported by webhooks, and cannot be used with WebSockets.
+// Note: This subscription type is only supported by webhooks, and cannot be used with websockets.
 //
 // Reference: https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#userauthorizationrevoke.
 func (c *callback[Metadata]) OnUserAuthorizationRevoke(onUserAuthorizationRevoke Handler[UserAuthorizationRevokeEvent, Metadata]) {

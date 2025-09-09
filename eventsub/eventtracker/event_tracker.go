@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// EventTTL is a desired (according to the Twitch's documentation) time-to-live for events in storage to count them as duplicated.
+// SafeEventTTL is a safe (according to the Twitch's documentation) time-to-live for events in storage to count them as duplicated.
 // In most cases this is what you want use as TTL for events in your custom EventTracker implementation (if it's not a test
 // or something like that). It's used by default in standard EventTracker implementations.
-const EventTTL = 10 * time.Minute
+const SafeEventTTL = 10 * time.Minute
 
 // EventTracker tracks events sent from eventsub server to avoid handling the same (duplicate) events multiple times.
 type EventTracker interface {

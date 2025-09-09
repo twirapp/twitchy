@@ -1,7 +1,7 @@
 package eventsub
 
 type WebhookNotificationMetadata struct {
-	MessageID           string
+	MessageId           string
 	MessageRetry        int
 	MessageType         string
 	MessageSignature    string

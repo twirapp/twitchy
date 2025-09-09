@@ -9,6 +9,7 @@ import (
 type Option func(*EventSub)
 
 // WithEventTracker sets tracker for events to prevent duplicate events.
+//
 // If this option is not set, events will not be tracked as there is no default value.
 func WithEventTracker(eventTracker eventtracker.EventTracker) Option {
 	return func(es *EventSub) {
@@ -16,11 +17,11 @@ func WithEventTracker(eventTracker eventtracker.EventTracker) Option {
 	}
 }
 
-// WithMarshal sets JSON marshaller that will be used as default marshaller.
+// WithUnmarshal sets JSON un-marshaller that will be used as default un-marshaller.
 //
-// Default value is a standard library marshaller.
-func WithMarshal(marshal json.Marshaller) Option {
+// Default value is a standard library un-marshaller.
+func WithUnmarshal(unmarshal json.UnMarshaller) Option {
 	return func(es *EventSub) {
-		es.marshal = marshal
+		es.unmarshal = unmarshal
 	}
 }
