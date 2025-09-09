@@ -29,7 +29,7 @@ func main() {
 		log.Printf("%s is now following %s!\n", event.UserName, event.BroadcasterUserName)
 	})
 
-	// Webhook is just an HTTP handler, so you can use it in any server or framework that accepts http.Handler interface.
+	// Webhook is just an HTTP handler, so you can use it with any server or framework that accepts http.Handler interface.
 	if err = http.ListenAndServe(":8080", webhook); err != nil {
 		log.Printf("http server is failed to listen: %s\n", err)
 	}
