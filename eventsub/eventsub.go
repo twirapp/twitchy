@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kvizyx/twitchy/eventsub/eventtracker"
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/eventsub/eventtracker"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 // EventSub is a Twitch eventsub module.

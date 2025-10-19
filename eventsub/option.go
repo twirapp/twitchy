@@ -1,8 +1,8 @@
 package eventsub
 
 import (
-	"github.com/kvizyx/twitchy/eventsub/eventtracker"
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/eventsub/eventtracker"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 // Option is an optional setting for EventSub.

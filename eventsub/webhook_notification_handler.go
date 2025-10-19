@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 // webhookRawEvent is a webhook duplicate for RawEvent to close internal JSON wrapper from user.

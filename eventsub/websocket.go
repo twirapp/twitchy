@@ -12,8 +12,8 @@ import (
 
 	"github.com/avast/retry-go/v4"
 	"github.com/coder/websocket"
-	"github.com/kvizyx/twitchy/eventsub/eventtracker"
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/eventsub/eventtracker"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 var (

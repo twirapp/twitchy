@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 // ErrUndefinedEventType indicates that eventsub sent an event that is not defined in the library, and the user has not

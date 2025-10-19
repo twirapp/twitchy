@@ -3,7 +3,7 @@ package eventtracker
 import (
 	"context"
 
-	"github.com/kvizyx/twitchy/internal/shardedmap"
+	"github.com/twirapp/twitchy/internal/shardedmap"
 )
 
 // InMemoryEventTracker is a standard in-memory concurrent safe implementation of EventTracker based on

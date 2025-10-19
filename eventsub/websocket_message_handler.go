@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kvizyx/twitchy/internal/json"
+	"github.com/twirapp/twitchy/internal/json"
 )
 
 type (

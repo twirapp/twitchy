@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/kvizyx/twitchy/eventsub/eventtracker"
+	"github.com/twirapp/twitchy/eventsub/eventtracker"
 )
 
 // ErrInvalidWebhookSecret indicates that your webhook secret doesn't match with Twitch's webhook secret requirements.
