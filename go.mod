@@ -1,4 +1,4 @@
-module github.com/kvizyx/twitchy
+module github.com/twirapp/twitchy
 
 go 1.24
 
