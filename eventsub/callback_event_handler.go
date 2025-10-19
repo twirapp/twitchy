@@ -67,6 +67,8 @@ func (c *callback[Metadata]) runEventCallback(
 		return runEventCallbackHandler(c.onConduitShardDisabled, event, metadata)
 	case EventTypeChannelBan:
 		return runEventCallbackHandler(c.onChannelBan, event, metadata)
+	case EventTypeChannelUnban:
+		return runEventCallbackHandler(c.onChannelUnban, event, metadata)
 	case EventTypeChannelChatNotification:
 		return runEventCallbackHandler(c.onChannelChatNotification, event, metadata)
 	case EventTypeChannelModeratorAdd:
