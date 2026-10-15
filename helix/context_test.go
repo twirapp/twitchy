@@ -148,7 +148,13 @@ func TestClientAs_resolutionFailure(t *testing.T) {
 func TestClientAsUser_keepsSubjectBindingValidation(t *testing.T) {
 	transport := testkit.NewRecordingRoundTripper()
 	resolver := &stubResolver{users: map[string]stubResolverEntry{
-		"111": {source: staticSource("token-one", "111")},
+		"111": {source: helix.NewStaticTokenSource(helix.Credential{
+			AccessToken: "token-one",
+			ClientID:    "client-id",
+			TokenClass:  helix.TokenClassUser,
+			UserID:      "111",
+			Scopes:      []helix.AuthorizationScope{helix.ScopeUserReadEmotes},
+		})},
 	}}
 	root, err := helix.New(
 		helix.WithBaseURL("https://api.twitch.test/helix"),
@@ -163,10 +169,10 @@ func TestClientAsUser_keepsSubjectBindingValidation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = derived.Channels.GetChannelFollowers(context.Background(), helix.GetChannelFollowersRequest{UserID: stringPointer("999"), BroadcasterID: "111"})
+	_, err = derived.Chat.GetUserEmotes(context.Background(), helix.GetUserEmotesRequest{UserID: "999"})
 	var authErr *helix.AuthError
 	if !errors.As(err, &authErr) {
-		t.Fatalf("GetChannelFollowers error = %v, want *helix.AuthError", err)
+		t.Fatalf("GetUserEmotes error = %v, want *helix.AuthError", err)
 	}
 	if got := len(transport.Requests()); got != 0 {
 		t.Fatalf("requests = %d, want 0 (rejected before network)", got)

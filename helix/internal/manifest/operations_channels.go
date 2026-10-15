@@ -139,7 +139,7 @@ var channelsOperations = operationsForGroup("Channels",
 		Stability:      StabilityStable,
 		TokenClasses:   []TokenClass{TokenClassUser},
 		Scopes:         []string{"moderator:read:followers"},
-		SubjectBinding: "user_id",
+		SubjectBinding: "unknown",
 		Request: RequestSpec{
 			Locations: map[string][]RequestField{
 				"query_parameters": {

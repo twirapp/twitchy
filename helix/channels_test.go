@@ -2,7 +2,6 @@ package helix_test
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"testing"
 
@@ -96,15 +95,30 @@ func TestChannelsGetFollowedChannelsPager(t *testing.T) {
 	}
 }
 
-func TestChannelsGetChannelFollowers_rejectsMismatchedUserIDBeforeNetwork(t *testing.T) {
-	transport := testkit.NewRecordingRoundTripper()
+func TestChannelsGetChannelFollowers_checksOtherUserAndReturnsTotal(t *testing.T) {
+	transport := testkit.NewRecordingRoundTripper(testkit.RoundTripResponse{Body: `{"data":[{"user_id":"777","user_login":"viewer","user_name":"Viewer","followed_at":"2026-01-02T03:04:05Z"}],"pagination":{},"total":1}`})
 	client := channelClient(t, transport)
-	_, err := client.Channels.GetChannelFollowers(context.Background(), helix.GetChannelFollowersRequest{UserID: stringPointer("wrong"), BroadcasterID: "123456"})
-	var authErr *helix.AuthError
-	if !errors.As(err, &authErr) {
-		t.Fatalf("error = %T %v, want AuthError", err, err)
+	response, err := client.Channels.GetChannelFollowers(context.Background(), helix.GetChannelFollowersRequest{UserID: stringPointer("777"), BroadcasterID: "123456"})
+	if err != nil {
+		t.Fatalf("GetChannelFollowers error = %v", err)
 	}
-	if len(transport.Requests()) != 0 {
-		t.Fatal("mismatched subject reached network")
+	if len(response.Data) != 1 || response.Data[0].UserID != "777" || response.Total == nil || *response.Total != 1 {
+		t.Fatalf("response = %#v", response)
+	}
+	requests := transport.Requests()
+	if len(requests) != 1 || requests[0].Path != "/helix/channels/followers?broadcaster_id=123456&user_id=777" {
+		t.Fatalf("requests = %#v", requests)
+	}
+}
+
+func TestChannelsGetChannelFollowers_totalOnlyPage(t *testing.T) {
+	transport := testkit.NewRecordingRoundTripper(testkit.RoundTripResponse{Body: `{"data":[],"pagination":{},"total":123456}`})
+	client := channelClient(t, transport)
+	response, err := client.Channels.GetChannelFollowers(context.Background(), helix.GetChannelFollowersRequest{BroadcasterID: "654321", First: intPointer(1)})
+	if err != nil {
+		t.Fatalf("GetChannelFollowers error = %v", err)
+	}
+	if response.Total == nil || *response.Total != 123456 {
+		t.Fatalf("total = %v, want 123456", response.Total)
 	}
 }

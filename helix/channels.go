@@ -119,12 +119,12 @@ func (s *ChannelsService) GetFollowedChannelsPager(req GetFollowedChannelsReques
 	}, opts...)
 }
 
+// GetChannelFollowers lists the broadcaster's followers. The token user must
+// be the broadcaster or one of its moderators, which cannot be verified
+// locally; UserID is the follower to check, not the token subject. Without
+// moderator:read:followers Twitch returns only Response.Total.
 func (s *ChannelsService) GetChannelFollowers(ctx context.Context, req GetChannelFollowersRequest) (*Response[GetChannelFollowersData], error) {
-	subjectID := ""
-	if req.UserID != nil {
-		subjectID = *req.UserID
-	}
-	return executeEndpointRequest[GetChannelFollowersData](s.client, ctx, "get-channel-followers", req, nil, subjectID)
+	return executeEndpointRequest[GetChannelFollowersData](s.client, ctx, "get-channel-followers", req, nil, "")
 }
 
 func (s *ChannelsService) GetChannelFollowersPager(req GetChannelFollowersRequest, opts ...PagerOption) (*Pager[GetChannelFollowersData], error) {

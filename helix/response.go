@@ -11,13 +11,18 @@ import (
 type Response[T any] struct {
 	Data       T
 	Pagination Pagination
-	Meta       ResponseMeta
+	// Total is the top-level `total` field of the Helix envelope (for example
+	// Get Channel Followers, Get Followed Channels, Get Chatters). It is nil
+	// when the endpoint does not return one.
+	Total *int
+	Meta  ResponseMeta
 }
 
 func (r *Response[T]) UnmarshalJSON(data []byte) error {
 	type responseWire[T any] struct {
 		Data       T          `json:"data"`
 		Pagination Pagination `json:"pagination"`
+		Total      *int       `json:"total"`
 	}
 	var wire responseWire[T]
 	if err := json.Unmarshal(data, &wire); err != nil {
@@ -25,6 +30,7 @@ func (r *Response[T]) UnmarshalJSON(data []byte) error {
 	}
 	r.Data = wire.Data
 	r.Pagination = wire.Pagination
+	r.Total = wire.Total
 	return nil
 }
 
@@ -32,12 +38,13 @@ func (r Response[T]) MarshalJSON() ([]byte, error) {
 	type responseWire[T any] struct {
 		Data       T           `json:"data"`
 		Pagination *Pagination `json:"pagination,omitempty"`
+		Total      *int        `json:"total,omitempty"`
 	}
 	var pagination *Pagination
 	if r.Pagination.Cursor() != "" {
 		pagination = &r.Pagination
 	}
-	return json.Marshal(responseWire[T]{Data: r.Data, Pagination: pagination})
+	return json.Marshal(responseWire[T]{Data: r.Data, Pagination: pagination, Total: r.Total})
 }
 
 type Pagination struct {
